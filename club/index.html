@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Cozé Club card</title>
+  <meta name="description" content="The Cozé Coffee Club card. Ten stamps, then one on us. Your usual remembered, and notes written to you.">
+  <meta name="theme-color" content="#3a2417">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Cozé Club">
+  <meta name="robots" content="noindex">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="../assets/img/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="../assets/img/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/base.css">
+  <link rel="stylesheet" href="club.css">
+</head>
+<body class="gingham">
+
+  <div class="stage">
+
+    <!-- Shown beside the phone on wide screens only -->
+    <aside class="stage-note" aria-label="About this demo">
+      <p class="stage-tag">Demo</p>
+      <h2>The member app</h2>
+      <p>This is what a Cozé Club member sees. On a phone it fills the screen and can be added to the Home Screen like an app.</p>
+      <p>Open the staff counter in another tab and add a stamp to Leena. This card reacts on its own, with no reload.</p>
+      <p class="stage-links">
+        <a class="btn btn-sm" href="../staff/" target="_blank" rel="noopener">Open the staff counter</a>
+        <a class="btn btn-sm btn-ghost" href="../">Back to the site</a>
+      </p>
+    </aside>
+
+    <div class="phone" id="phone">
+
+      <!-- A note arriving while the app is open slides down here, like a phone notification -->
+      <button class="banner" id="banner" type="button" hidden>
+        <img src="../assets/img/icon-192.png" alt="" width="40" height="40">
+        <span class="banner-text">
+          <span class="banner-top"><b>Cozé</b><span>now</span></span>
+          <strong id="bannerTitle"></strong>
+          <span id="bannerBody"></span>
+        </span>
+      </button>
+
+      <!-- Signed out: get a card, open a card, or try the demo card -->
+      <main class="gate" id="gate">
+        <header class="gate-head">
+          <svg class="wm" viewBox="0 0 3244 1046" role="img" aria-label="Cozé"><use href="#coze"></use></svg>
+          <span>Coffee Club</span>
+        </header>
+
+        <h1>Get your club card</h1>
+        <p class="lede">Ten stamps, then one on us. It takes a first name and a mobile number.</p>
+
+        <form class="panel form" id="joinForm" novalidate>
+          <label class="field">
+            <span>First name</span>
+            <input name="first" type="text" autocomplete="given-name" autocapitalize="words" maxlength="24" required>
+          </label>
+
+          <div class="field">
+            <label for="joinMobile">Mobile number</label>
+            <div class="prefixed">
+              <span aria-hidden="true">+960</span>
+              <input id="joinMobile" name="mobile" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="9" placeholder="7XX XXXX" required aria-describedby="joinMobileHint">
+            </div>
+            <small id="joinMobileHint">This is how the bar finds your card.</small>
+          </div>
+
+          <fieldset class="field">
+            <legend>Birthday <em>optional</em></legend>
+            <div class="pair">
+              <select name="bd" aria-label="Birthday day"></select>
+              <select name="bm" aria-label="Birthday month"></select>
+            </div>
+            <small>For a slice of cheesecake in your birthday month. No year needed.</small>
+          </fieldset>
+
+          <label class="field">
+            <span>Your usual <em>optional</em></span>
+            <select name="usual"></select>
+          </label>
+
+          <label class="switch">
+            <input type="checkbox" name="notes" checked>
+            <span class="track" aria-hidden="true"></span>
+            <span class="text"><b>Send me personal notes</b><small>Your free drink, your birthday, a first taste. Never ads.</small></span>
+          </label>
+
+          <p class="field-error" id="joinError" role="alert" hidden></p>
+          <button class="btn btn-toast btn-block" type="submit">Get my card</button>
+          <p class="fine">Your card is private. No public profile, and only the team at Cozé sees it.</p>
+        </form>
+
+        <form class="panel form" id="signInForm" novalidate>
+          <h2>Already have a card?</h2>
+          <div class="field">
+            <label for="signInMobile">Mobile number</label>
+            <div class="prefixed">
+              <span aria-hidden="true">+960</span>
+              <input id="signInMobile" name="mobile" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="9" placeholder="7XX XXXX" required>
+            </div>
+          </div>
+          <p class="field-error" id="signInError" role="alert" hidden></p>
+          <button class="btn btn-block" type="submit">Open my card</button>
+          <p class="fine">In the live app we confirm your number with a text code.</p>
+        </form>
+
+        <div class="panel demo-box">
+          <p><b>Just looking?</b> Open a card that already has nine stamps, a birthday treat and a few notes.</p>
+          <button class="btn btn-sun btn-block" type="button" id="demoCard">Try the demo card (Leena)</button>
+        </div>
+
+        <p class="gate-links"><a href="../">Back to the Cozé site</a><a href="../staff/">Staff counter</a></p>
+      </main>
+
+      <!-- Signed in -->
+      <div class="app" id="app" hidden>
+        <header class="topbar">
+          <a class="topbar-brand" href="#card" aria-label="Cozé Club, your card">
+            <svg class="wm" viewBox="0 0 3244 1046" aria-hidden="true"><use href="#coze"></use></svg>
+            <span>Club</span>
+          </a>
+          <a class="bell" id="bell" href="#notes">
+            <svg class="icon" aria-hidden="true"><use href="#i-bell"></use></svg>
+            <span class="bell-count" id="bellCount" hidden></span>
+            <span class="sr-only" id="bellLabel">Notes</span>
+          </a>
+        </header>
+
+        <main class="view" id="view" tabindex="-1"></main>
+
+        <nav class="tabbar" aria-label="Sections">
+          <a href="#card" data-tab="card"><svg class="icon" aria-hidden="true"><use href="#i-card"></use></svg><span>Card</span></a>
+          <a href="#rewards" data-tab="rewards"><svg class="icon" aria-hidden="true"><use href="#i-ticket"></use></svg><span>Rewards</span><i class="tab-dot" id="rewardsDot" hidden></i></a>
+          <a href="#notes" data-tab="notes"><svg class="icon" aria-hidden="true"><use href="#i-bell"></use></svg><span>Notes</span><i class="tab-dot" id="notesDot" hidden></i></a>
+          <a href="#you" data-tab="you"><svg class="icon" aria-hidden="true"><use href="#i-person"></use></svg><span>You</span></a>
+        </nav>
+      </div>
+
+      <noscript><p class="noscript">The club card needs JavaScript turned on.</p></noscript>
+    </div>
+  </div>
+
+  <!-- "Show at the bar": the QR code and card number staff scan or type -->
+  <dialog class="sheet" id="qrSheet" aria-labelledby="qrTitle">
+    <div class="sheet-body">
+      <p class="sheet-kicker" id="qrTitle">Show this at the bar</p>
+      <div class="qr-box" id="qrBox"></div>
+      <p class="qr-number num" id="qrNumber"></p>
+      <p class="qr-name" id="qrName"></p>
+      <p class="qr-usual" id="qrUsual"></p>
+      <button class="btn btn-block" type="button" data-close>Done</button>
+    </div>
+  </dialog>
+
+  <!-- Yes / no questions: use a reward, delete the card -->
+  <dialog class="sheet" id="askSheet" aria-labelledby="askTitle">
+    <div class="sheet-body">
+      <h2 id="askTitle"></h2>
+      <div class="ask-text" id="askText"></div>
+      <div class="ask-actions">
+        <button class="btn btn-ghost" type="button" id="askNo">Not now</button>
+        <button class="btn" type="button" id="askYes">Yes</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="../assets/js/brand.js"></script>
+  <script src="../assets/vendor/qrcode.js"></script>
+  <script src="../assets/js/store.js"></script>
+  <script src="../assets/js/ui.js"></script>
+  <script src="club.js"></script>
+</body>
+</html>

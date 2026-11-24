@@ -1,0 +1,17 @@
+{
+  "name": "Cozé Club",
+  "short_name": "Cozé Club",
+  "description": "Your Cozé Coffee Club card. Ten stamps, then one on us.",
+  "lang": "en",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#3a2417",
+  "theme_color": "#3a2417",
+  "icons": [
+    { "src": "../assets/img/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "../assets/img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "../assets/img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

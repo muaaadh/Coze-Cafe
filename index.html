@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cozé Coffee Club, Malé. Your quiet corner when the city gets too loud.</title>
+<meta name="description" content="Cozé Coffee Club in Maafannu, Malé. Signature drinks, breakfast from home kitchens, and a club card that remembers your usual.">
+<meta property="og:title" content="Cozé Coffee Club, Malé">
+<meta property="og:description" content="Your quiet corner when the city gets too loud. Ten stamps, then one on us.">
+<meta property="og:image" content="https://muaaadh.github.io/Coze-Cafe/assets/img/og.jpg">
+<meta property="og:url" content="https://muaaadh.github.io/Coze-Cafe/">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#fff8ec">
+<link rel="icon" href="assets/img/favicon.png">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/site.css">
+<script>
+  /* Scroll reveals only hide things when scripts run. If site.js never reports ready, show everything. */
+  document.documentElement.className = 'js';
+  setTimeout(function () { if (!window.__cozeSiteReady) document.documentElement.className = ''; }, 2500);
+</script>
+</head>
+<body class="gingham">
+<script src="assets/js/brand.js"></script>
+<a class="skip" href="#main">Skip to the page</a>
+
+<aside class="demo-switch" aria-label="Demo preview">
+  <span class="demo-label">Demo preview</span>
+  <a href="./" aria-current="page">Site</a>
+  <a href="club/">Member card</a>
+  <a href="staff/">Staff counter</a>
+</aside>
+
+<nav class="capsule" aria-label="Main">
+  <a href="#club">Club card</a>
+  <a href="#menu">Menu</a>
+  <a href="#week">This week</a>
+  <a href="#visit">Visit</a>
+</nav>
+<a class="btn top-cta" href="club/">My club card</a>
+
+<header class="hero" id="top">
+  <picture class="hero-photo">
+    <source media="(max-width: 700px)" srcset="assets/img/hero-tall.webp">
+    <img src="assets/img/hero.webp" width="2400" height="1350" alt="A hand holding up a blue Dirty Frostbite, served in a flask, in front of the Cozé sign on the counter" fetchpriority="high">
+  </picture>
+  <a class="hero-brand" href="#top" aria-label="Cozé Coffee Club, back to the top">
+    <svg class="wm" viewBox="0 0 3244 1046" aria-hidden="true"><use href="#coze"/></svg>
+    <span>Coffee Club</span>
+  </a>
+  <div class="hero-foot">
+    <h1 class="hero-word">
+      <span class="sr-only">Cozé Coffee Club</span>
+      <svg class="wm" viewBox="0 0 3244 1046" aria-hidden="true"><use href="#coze"/></svg>
+    </h1>
+    <div class="hero-side">
+      <a class="sticker hero-sticker" href="#club" style="--size:128px;--tilt:11deg" aria-label="Ten stamps and the next drink is on us. See the club card.">
+        <svg aria-hidden="true"><use href="#scallop"/></svg>
+        <span><b>10</b>stamps, one on us</span>
+      </a>
+      <span class="pill">Opposite STO, Maafannu</span>
+      <span class="pill" data-open-pill><i class="dot"></i><span data-open-label>Every day, 7:30 am to 11:30 pm</span></span>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="intro wrap" aria-labelledby="intro-title">
+    <h2 id="intro-title" class="display h-xl center" data-reveal>Your quiet corner when the city gets too loud.</h2>
+    <ul class="tiles">
+      <li class="tile" data-reveal style="--d:0ms">
+        <img src="assets/img/drink-matcha-monkey.webp" width="900" height="900" alt="Matcha Monkey, a layered banana matcha, held over a table of cake" loading="lazy">
+        <div class="sticker" style="--size:108px;--tilt:14deg"><svg aria-hidden="true"><use href="#scallop"/></svg><span>Banana matcha</span></div>
+        <p class="tile-name">Matcha Monkey</p>
+      </li>
+      <li class="tile" data-reveal style="--d:90ms">
+        <img src="assets/img/drink-dirty-frostbite.webp" width="900" height="900" alt="Dirty Frostbite, a pale blue drink with a white foam top, in a flask-shaped glass" loading="lazy">
+        <div class="sticker is-toast" style="--size:112px;--tilt:-12deg"><svg aria-hidden="true"><use href="#burst"/></svg><span>Served in a flask</span></div>
+        <p class="tile-name">Dirty Frostbite</p>
+      </li>
+      <li class="tile" data-reveal style="--d:180ms">
+        <img src="assets/img/drink-marshmallow-bloom.webp" width="900" height="900" alt="Marshmallow Bloom, a blueberry drink topped with a toasted marshmallow" loading="lazy">
+        <div class="sticker is-espresso" style="--size:108px;--tilt:10deg"><svg aria-hidden="true"><use href="#scallop"/></svg><span>Toasted on top</span></div>
+        <p class="tile-name">Marshmallow Bloom</p>
+      </li>
+    </ul>
+  </section>
+
+  <!-- The club card: the main feature, kept within one scroll of the top. -->
+  <section id="club" class="club wrap" aria-labelledby="club-title">
+    <div class="club-panel">
+      <div class="club-copy">
+        <p class="eyebrow">Cozé Club</p>
+        <h2 id="club-title" class="display h-lg">A card with your name on it.</h2>
+        <p class="lead">Ten stamps, then one on us. Your usual, remembered at the bar. And the odd note that is written to you, not to everyone.</p>
+        <dl class="club-points">
+          <div><dt>A loyalty card on your phone</dt><dd>No app to download, no plastic to lose. Add it to your home screen and show it at the bar.</dd></div>
+          <div><dt>Notes sent only to you</dt><dd>Your free drink is ready. It is your birthday month. A new drink wants tasting. Never ads.</dd></div>
+          <div><dt>Private by default</dt><dd>No public profile and no leaderboard. Only the team at Cozé sees your card, and you can delete it any time.</dd></div>
+        </dl>
+        <form class="join" id="joinForm" action="club/" method="get" novalidate>
+          <label class="field">
+            <span>First name</span>
+            <input type="text" name="first" autocomplete="given-name" maxlength="30" required placeholder="Leena">
+          </label>
+          <label class="field">
+            <span>Mobile number</span>
+            <span class="tel"><i>+960</i><input type="tel" name="mobile" inputmode="numeric" autocomplete="tel-national" maxlength="8" required placeholder="777 0000"></span>
+          </label>
+          <button class="btn btn-block" type="submit">Get my card <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></button>
+          <p class="field-error" id="joinError" role="alert" hidden></p>
+          <p class="hint">Already have one? <a href="club/">Open my card</a></p>
+        </form>
+      </div>
+
+      <div class="club-show">
+        <div class="phone" id="phoneDemo">
+          <div class="phone-notch" aria-hidden="true"></div>
+          <div class="phone-screen">
+            <div class="phone-note" id="phoneNote" role="status" aria-live="polite">
+              <span class="phone-note-app"><svg class="wm" viewBox="0 0 3244 1046" aria-hidden="true"><use href="#coze"/></svg> Cozé <i>now</i></span>
+              <b data-note-title>First taste, if you want it</b>
+              <span data-note-body>Leena, the Yuzu Mirage Tonic lands this Friday. Shall we keep you a glass?</span>
+            </div>
+            <div class="mini-card">
+              <div class="mini-card-top">
+                <svg class="wm" viewBox="0 0 3244 1046" aria-hidden="true"><use href="#coze"/></svg>
+                <span>Club card</span>
+              </div>
+              <p class="mini-name">Leena</p>
+              <p class="mini-meta"><span>CZ-4821</span><span>Regular</span></p>
+              <ul class="mini-stamps" id="phoneStamps" aria-label="Stamps on the sample card"></ul>
+              <p class="mini-line" id="phoneLine">8 of 10 stamps</p>
+            </div>
+            <div class="mini-usual">
+              <span>Your usual</span>
+              <b>Matcha Monkey, less ice, oat milk</b>
+            </div>
+            <span class="mini-btn"><svg class="icon" aria-hidden="true"><use href="#i-qr"/></svg> Show at the bar</span>
+            <div class="mini-tabs" aria-hidden="true">
+              <span class="is-on"><svg class="icon"><use href="#i-card"/></svg>Card</span>
+              <span><svg class="icon"><use href="#i-ticket"/></svg>Rewards</span>
+              <span><svg class="icon"><use href="#i-bell"/></svg>Notes</span>
+              <span><svg class="icon"><use href="#i-person"/></svg>You</span>
+            </div>
+          </div>
+        </div>
+        <div class="club-try">
+          <button class="btn btn-toast" type="button" id="phoneStampBtn"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg> Add a stamp</button>
+          <p>Try it. This is what happens on your phone when the barista stamps your card.</p>
+        </div>
+        <div class="sticker is-espresso club-sticker" style="--size:118px;--tilt:-12deg"><svg aria-hidden="true"><use href="#burst"/></svg><span>First stamp is on us</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Three panels that stack over each other while scrolling. -->
+  <section class="stack wrap" aria-label="The drinks, the counter and the room">
+    <article class="panel is-espresso" style="--i:0">
+      <div class="panel-copy">
+        <p class="eyebrow">The drinks</p>
+        <h3 class="display h-md">Made to be looked at first, then finished fast.</h3>
+        <p>Matcha Monkey with banana. Dirty Frostbite in a flask. Marshmallow Bloom, toasted on top. The menu keeps growing.</p>
+        <a class="btn btn-light btn-sm" href="#menu">See the menu <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      </div>
+      <figure class="panel-photo"><img src="assets/img/panel-drinks.webp" width="1000" height="1500" alt="Two friends raising an iced coffee and a Matcha Monkey over a table" loading="lazy"></figure>
+    </article>
+    <article class="panel is-butter" style="--i:1">
+      <div class="panel-copy">
+        <p class="eyebrow">The counter</p>
+        <h3 class="display h-md">Breakfast from home kitchens, cake from the counter.</h3>
+        <p>Mashuni, kulhimas and roshi in the morning. Chicken rolls, sandwiches, doughnuts and cheesecake all day.</p>
+        <a class="btn btn-sm" href="#menu">See the menu <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      </div>
+      <figure class="panel-photo">
+        <img src="assets/img/panel-counter.webp" width="1000" height="1500" alt="A table with a cookies and cream doughnut, blueberry cheesecake and a chicken roll" loading="lazy">
+        <div class="sticker is-toast" style="--size:104px;--tilt:12deg"><svg aria-hidden="true"><use href="#burst"/></svg><span>Bring a friend</span></div>
+      </figure>
+    </article>
+    <article class="panel is-toast" style="--i:2">
+      <div class="panel-copy">
+        <p class="eyebrow">The room</p>
+        <h3 class="display h-md">Long tables, warm wood and a letter board that talks back.</h3>
+        <p>Built by hand over two months. Room for friends and families, colouring books for the little ones, and a separate smoking room with its own door.</p>
+        <a class="btn btn-light btn-sm" href="#visit">Find us <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      </div>
+      <figure class="panel-photo">
+        <img src="assets/img/panel-room.webp" width="1000" height="1500" alt="A quiet booth at Cozé with a slatted wood ceiling and a painting of someone reading" loading="lazy">
+        <span class="pill panel-pill">Stay a while</span>
+      </figure>
+    </article>
+  </section>
+
+  <section id="week" class="week wrap" aria-labelledby="week-title">
+    <header class="split-head">
+      <h2 id="week-title" class="display h-xl" data-reveal>This week at Cozé.</h2>
+      <p data-reveal>Small things for people who come back. Show your club card at the bar.</p>
+    </header>
+    <ul class="tickets" id="offers"></ul>
+  </section>
+
+  <section class="favs" aria-labelledby="favs-title">
+    <h2 id="favs-title" class="favs-word display"><span id="favsWord">Club favourites</span></h2>
+    <ul class="fav-cards wrap" id="favs"></ul>
+  </section>
+
+  <section id="menu" class="menu wrap" aria-labelledby="menu-title">
+    <header class="split-head">
+      <h2 id="menu-title" class="display h-xl" data-reveal>The menu.</h2>
+      <p data-reveal>Signatures first. Everything is made to order, and breakfast comes from home kitchens nearby.</p>
+    </header>
+    <div class="menu-cols" id="menuCols"></div>
+    <p class="menu-foot">Prices in MVR. Sample prices for this preview, until the printed menu is confirmed.</p>
+    <noscript><p class="menu-foot">Turn on JavaScript to see the menu and this week's offers.</p></noscript>
+  </section>
+
+  <section id="visit" class="visit wrap" aria-labelledby="visit-title">
+    <figure class="visit-photo">
+      <img src="assets/img/storefront.webp" width="2000" height="1333" alt="The Cozé Coffee Club shop front, with arched windows and the sign beside the door" loading="lazy">
+      <figcaption class="visit-pills">
+        <span class="pill" data-hours-pill>Every day, 7:30 am to 11:30 pm</span>
+        <span class="pill">Kanbaa Aisa Rani Hingun</span>
+      </figcaption>
+    </figure>
+    <div class="visit-card" data-reveal>
+      <span class="pill" data-open-pill><i class="dot"></i><span data-open-label>Every day, 7:30 am to 11:30 pm</span></span>
+      <h2 id="visit-title" class="display h-lg">Come by. The long table is waiting.</h2>
+      <dl class="facts">
+        <div><dt>Where</dt><dd>Opposite the STO main office, Kanbaa Aisa Rani Hingun, Maafannu, Malé</dd></div>
+        <div><dt>Hours</dt><dd data-hours>Every day, 7:30 am to 11:30 pm</dd></div>
+        <div><dt>Good to know</dt><dd>Long tables for groups, colouring books for kids, and a smoking room with its own entrance.</dd></div>
+      </dl>
+      <div class="btn-row">
+        <a class="btn btn-toast" href="https://www.google.com/maps/search/?api=1&amp;query=STO+Head+Office%2C+Kanbaa+Aisa+Rani+Hingun%2C+Mal%C3%A9" target="_blank" rel="noopener">Get directions <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        <a class="btn btn-ghost" href="https://www.instagram.com/cozecoffeeclub/" target="_blank" rel="noopener">Instagram</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="words wrap" aria-labelledby="words-title">
+    <header class="split-head">
+      <h2 id="words-title" class="display h-xl" data-reveal>From the letter board.</h2>
+      <p data-reveal>The board by the till changes when we feel like it. These ones stuck.</p>
+    </header>
+    <ul class="word-cards">
+      <li class="word-card" data-reveal style="--d:0ms">
+        <img src="assets/img/board.webp" width="1000" height="1106" alt="The letter board on the counter reading: take a sip, stay a while" loading="lazy">
+        <blockquote>“Take a sip, stay a while.”</blockquote>
+        <p class="eyebrow">On the counter</p>
+      </li>
+      <li class="word-card" data-reveal style="--d:90ms">
+        <img src="assets/img/prints.webp" width="1000" height="1106" alt="Framed prints on the wall, one reading: honey, your soul is golden" loading="lazy">
+        <blockquote>“Honey, your soul is golden.”</blockquote>
+        <p class="eyebrow">On the wall</p>
+      </li>
+      <li class="word-card" data-reveal style="--d:180ms">
+        <img src="assets/img/counter-sign.webp" width="1000" height="844" alt="The Cozé Coffee Club sign on the ribbed wooden counter" loading="lazy">
+        <blockquote>“The hardest part is pretending you only came for one.”</blockquote>
+        <p class="eyebrow">@cozecoffeeclub</p>
+      </li>
+    </ul>
+    <p class="press">“The fresh blend in Malé’s café scene.” <a href="https://tasty.mv/new-openings-closings/a-fresh-blend-in-mals-caf-scene-" target="_blank" rel="noopener">Tasty Magazine, November 2026</a></p>
+  </section>
+
+  <section class="closing wrap" aria-labelledby="closing-title">
+    <div class="closing-copy">
+      <div class="sticker closing-sticker" style="--size:120px;--tilt:-10deg"><svg aria-hidden="true"><use href="#scallop"/></svg><span>First stamp is on us</span></div>
+      <h2 id="closing-title" class="display h-xl">Coffee tastes better when they know your order.</h2>
+      <div class="closing-row">
+        <p>Get the card. It takes a first name and a mobile number.</p>
+        <div class="btn-row">
+          <a class="btn btn-toast" href="club/">Get my club card <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          <a class="btn btn-ghost" href="#menu">See the menu</a>
+        </div>
+      </div>
+    </div>
+    <figure class="closing-photo"><img src="assets/img/closing.webp" width="1000" height="1087" alt="A Marshmallow Bloom on a wooden table with the Cozé sign behind it" loading="lazy"></figure>
+  </section>
+
+</main>
+
+<footer class="foot wrap">
+  <div class="foot-inner">
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        <span>Matcha Monkey / Dirty Frostbite / Marshmallow Bloom / Sunset Tonic / Yuzu Mirage Tonic / Cheesecake / Chicken roll / Mashuni and roshi /&nbsp;</span>
+        <span>Matcha Monkey / Dirty Frostbite / Marshmallow Bloom / Sunset Tonic / Yuzu Mirage Tonic / Cheesecake / Chicken roll / Mashuni and roshi /&nbsp;</span>
+      </div>
+    </div>
+    <div class="foot-cols">
+      <div class="foot-hello">
+        <p class="eyebrow">Say hello</p>
+        <a class="foot-big" href="https://www.instagram.com/cozecoffeeclub/" target="_blank" rel="noopener">@cozecoffeeclub</a>
+      </div>
+      <div>
+        <p class="eyebrow">Visit</p>
+        <p>Opposite the STO main office<br>Maafannu, Malé</p>
+        <p data-hours>Every day, 7:30 am to 11:30 pm</p>
+      </div>
+      <div>
+        <p class="eyebrow">Explore</p>
+        <ul>
+          <li><a href="#menu">Menu</a></li>
+          <li><a href="#week">This week</a></li>
+          <li><a href="club/">Club card</a></li>
+          <li><a href="staff/">Staff counter</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="eyebrow">Follow</p>
+        <ul>
+          <li><a href="https://www.instagram.com/cozecoffeeclub/" target="_blank" rel="noopener">Instagram</a></li>
+          <li><a href="https://www.facebook.com/p/Coz%C3%A9-Coffee-Club-61589444917666/" target="_blank" rel="noopener">Facebook</a></li>
+          <li><a href="https://www.tiktok.com/discover/coze-coffee-club" target="_blank" rel="noopener">TikTok</a></li>
+        </ul>
+      </div>
+    </div>
+    <svg class="wm foot-word" viewBox="0 0 3244 1046" role="img" aria-label="Cozé"><use href="#coze"/></svg>
+    <p class="foot-small">Website preview by Dheemi Studio. Photos: Tasty Magazine and @cozecoffeeclub. Prices and opening hours are placeholders.</p>
+  </div>
+</footer>
+
+<script src="assets/js/store.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/site.js"></script>
+</body>
+</html>

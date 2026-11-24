@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#3a2417">
+<title>Cozé staff counter</title>
+<link rel="icon" href="../assets/img/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/base.css">
+<link rel="stylesheet" href="staff.css">
+</head>
+<body class="staff">
+
+<noscript><p class="noscript">The staff counter needs JavaScript switched on.</p></noscript>
+
+<!-- Passcode gate -->
+<main id="gate" class="gate gingham" hidden>
+  <form id="gate-form" class="gate-card" novalidate>
+    <svg class="wm gate-wm" viewBox="0 0 3244 1046" role="img" aria-label="Cozé"><use href="#coze"/></svg>
+    <h1>Staff counter</h1>
+    <p class="gate-lead">For the team at Cozé Coffee Club. Add stamps, hand over rewards and write to members.</p>
+    <label class="field" for="gate-code">
+      <span>Passcode</span>
+      <input id="gate-code" type="password" inputmode="numeric" autocomplete="off" maxlength="8" aria-describedby="gate-error" required>
+    </label>
+    <p id="gate-error" class="field-error" role="alert"></p>
+    <button class="btn btn-toast btn-block" type="submit">Open the counter</button>
+    <p class="gate-demo">Demo passcode: 2026</p>
+    <p class="gate-links"><a href="../">Back to the site</a><a href="../club/">Member card</a></p>
+  </form>
+</main>
+
+<!-- The counter -->
+<div id="app" class="app" hidden>
+  <aside class="side">
+    <div class="side-top">
+      <a class="side-brand" href="#counter" aria-label="Cozé staff counter, go to Counter">
+        <svg class="wm" viewBox="0 0 3244 1046" aria-hidden="true"><use href="#coze"/></svg>
+        <span>Staff counter</span>
+      </a>
+      <button type="button" class="side-out is-top" data-signout>Sign out</button>
+    </div>
+    <nav class="side-nav" aria-label="Sections">
+      <a href="#counter" data-nav="counter"><svg class="icon" aria-hidden="true"><use href="#i-cup"/></svg><span>Counter</span></a>
+      <a href="#members" data-nav="members"><svg class="icon" aria-hidden="true"><use href="#i-people"/></svg><span>Members</span></a>
+      <a href="#notes" data-nav="notes"><svg class="icon" aria-hidden="true"><use href="#i-send"/></svg><span>Notes</span></a>
+      <a href="#week" data-nav="week"><svg class="icon" aria-hidden="true"><use href="#i-tag"/></svg><span>This week</span></a>
+      <a href="#settings" data-nav="settings"><svg class="icon" aria-hidden="true"><use href="#i-gear"/></svg><span>Settings</span></a>
+    </nav>
+    <div class="side-foot">
+      <span class="pill" id="open-pill"><span class="dot"></span><span id="open-text"></span></span>
+      <a href="../club/" target="_blank" rel="noopener">Open the member card</a>
+      <a href="../" target="_blank" rel="noopener">Open the site</a>
+      <button type="button" class="side-out" data-signout>Sign out</button>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+
+    <!-- 1. Counter -->
+    <section class="sec" data-section="counter" aria-labelledby="h-counter" hidden>
+      <header class="sec-head">
+        <h1 id="h-counter">Counter</h1>
+        <p class="sec-sub" id="today-line"></p>
+      </header>
+      <div class="tiles" id="tiles"></div>
+      <div class="waiting" id="waiting" hidden></div>
+
+      <div class="counter-grid">
+        <div class="card find-card">
+          <label class="find-label" for="find">Card number, name or mobile</label>
+          <div class="find-box">
+            <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+            <input id="find" type="search" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="search" placeholder="4821, Leena or 777 4821" aria-describedby="find-hint" aria-controls="results">
+          </div>
+          <p class="hint" id="find-hint">Scan the card's QR code or type the last four digits.</p>
+          <h2 class="list-title" id="results-title">Recent at the counter</h2>
+          <ul class="results" id="results" aria-labelledby="results-title"></ul>
+        </div>
+        <div class="card member-panel" id="member-panel" tabindex="-1"></div>
+      </div>
+
+      <div class="lower-grid">
+        <div class="card">
+          <h2 class="card-title">Today at the counter</h2>
+          <ul class="activity" id="activity"></ul>
+        </div>
+        <div class="card">
+          <h2 class="card-title">Visits, last 14 days</h2>
+          <div class="chart" id="chart"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Members -->
+    <section class="sec" data-section="members" aria-labelledby="h-members" hidden>
+      <header class="sec-head">
+        <h1 id="h-members">Members</h1>
+        <p class="sec-sub" id="members-sub"></p>
+      </header>
+      <div class="card members-card">
+        <div class="toolbar">
+          <label class="find-box is-small" for="members-q">
+            <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+            <span class="sr-only">Search members</span>
+            <input id="members-q" type="search" autocomplete="off" spellcheck="false" placeholder="Search name, card or mobile">
+          </label>
+          <button type="button" class="btn btn-toast btn-sm" id="write-to"></button>
+        </div>
+        <div class="segs" id="segs" role="group" aria-label="Filter members"></div>
+        <div class="table-wrap">
+          <table class="table" id="members-table">
+            <thead>
+              <tr>
+                <th scope="col" data-sort="name"><button type="button" data-sort-btn="name">Name</button></th>
+                <th scope="col">Card</th>
+                <th scope="col">Mobile</th>
+                <th scope="col">Status</th>
+                <th scope="col" data-sort="stamps"><button type="button" data-sort-btn="stamps">Stamps</button></th>
+                <th scope="col">Free drinks</th>
+                <th scope="col" data-sort="last"><button type="button" data-sort-btn="last">Last visit</button></th>
+                <th scope="col">Usual</th>
+              </tr>
+            </thead>
+            <tbody id="members-body"></tbody>
+          </table>
+        </div>
+        <p class="empty" id="members-empty" hidden>No member matches that.</p>
+      </div>
+    </section>
+
+    <!-- 3. Notes -->
+    <section class="sec" data-section="notes" aria-labelledby="h-notes" hidden>
+      <header class="sec-head">
+        <h1 id="h-notes">Notes</h1>
+        <p class="sec-sub">A note lands on the member's phone as a notification and stays in their card's inbox.</p>
+      </header>
+
+      <div class="notes-grid">
+        <form class="card composer" id="note-form" novalidate>
+          <h2 class="card-title">Write a note</h2>
+
+          <fieldset class="to">
+            <legend>To</legend>
+            <div class="choice" id="to-modes">
+              <label><input type="radio" name="to-mode" value="one" checked><span>One person</span></label>
+              <label><input type="radio" name="to-mode" value="group"><span>A group</span></label>
+              <label id="to-mode-list" hidden><input type="radio" name="to-mode" value="list"><span id="to-mode-list-text">Picked in Members</span></label>
+            </div>
+
+            <div id="to-one">
+              <div class="chosen" id="to-chosen" hidden></div>
+              <div id="to-pick">
+                <label class="find-box is-small" for="to-q">
+                  <svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>
+                  <span class="sr-only">Find the person</span>
+                  <input id="to-q" type="search" autocomplete="off" spellcheck="false" placeholder="Name, card or mobile" aria-controls="to-results">
+                </label>
+                <ul class="results is-compact" id="to-results"></ul>
+              </div>
+            </div>
+
+            <div id="to-group" hidden>
+              <label class="field" for="to-seg">
+                <span class="sr-only">Group</span>
+                <select id="to-seg"></select>
+              </label>
+            </div>
+
+            <p class="to-summary" id="to-summary" aria-live="polite"></p>
+          </fieldset>
+
+          <label class="field" for="note-kind">
+            <span>Kind of note</span>
+            <select id="note-kind"></select>
+            <small>Members choose which kinds they get. Anyone who switched this kind off is skipped.</small>
+          </label>
+
+          <div class="starters">
+            <span class="label" id="starters-label">Start from</span>
+            <div class="starter-row" id="starters" role="group" aria-labelledby="starters-label"></div>
+          </div>
+
+          <label class="field" for="note-title">
+            <span>Title</span>
+            <input id="note-title" type="text" maxlength="50" autocomplete="off" placeholder="Your usual is on us">
+          </label>
+
+          <label class="field" for="note-body">
+            <span class="with-count">Message <span class="count num" id="note-count">0 of 160</span></span>
+            <textarea id="note-body" maxlength="160" rows="3" placeholder="{name}, your usual is on the house today."></textarea>
+            <small>{name} becomes the person's first name.</small>
+          </label>
+
+          <div class="field">
+            <span id="replies-label">Quick replies (optional)</span>
+            <div class="two" role="group" aria-labelledby="replies-label">
+              <input class="input" id="note-r1" type="text" maxlength="24" autocomplete="off" placeholder="On my way" aria-label="First quick reply">
+              <input class="input" id="note-r2" type="text" maxlength="24" autocomplete="off" placeholder="Not today" aria-label="Second quick reply">
+            </div>
+            <small>Up to two buttons the member can tap to answer.</small>
+          </div>
+
+          <div class="form-foot">
+            <button class="btn btn-toast" id="note-send" type="submit" disabled>Send note</button>
+            <span class="hint" id="note-send-hint"></span>
+          </div>
+        </form>
+
+        <aside class="preview" aria-label="Preview of the notification">
+          <div class="phone" id="phone">
+            <div class="phone-notch"></div>
+            <p class="phone-date" id="phone-date"></p>
+            <p class="phone-time num" id="phone-time"></p>
+            <div class="push" id="push">
+              <div class="push-head">
+                <span class="push-app"><svg class="wm" viewBox="0 0 3244 1046" aria-hidden="true"><use href="#coze"/></svg></span>
+                <span class="push-name">Cozé</span>
+                <span class="push-when">now</span>
+              </div>
+              <p class="push-title" id="push-title"></p>
+              <p class="push-body" id="push-body"></p>
+              <div class="push-replies" id="push-replies" hidden></div>
+            </div>
+          </div>
+          <p class="preview-cap" id="preview-cap"></p>
+        </aside>
+      </div>
+
+      <div class="card sent-card">
+        <h2 class="card-title">Sent</h2>
+        <ul class="sent" id="sent"></ul>
+      </div>
+    </section>
+
+    <!-- 4. This week -->
+    <section class="sec" data-section="week" aria-labelledby="h-week" hidden>
+      <header class="sec-head has-actions">
+        <div>
+          <h1 id="h-week">This week</h1>
+          <p class="sec-sub">The three offers shown on the site and on every member's card.</p>
+        </div>
+        <div class="head-actions">
+          <span class="unsaved" id="week-unsaved" hidden>Unsaved changes</span>
+          <button type="button" class="btn btn-ghost btn-sm" id="week-discard" disabled>Discard</button>
+          <button type="button" class="btn btn-toast" id="week-publish" disabled>Publish</button>
+        </div>
+      </header>
+      <div class="offers" id="offers"></div>
+    </section>
+
+    <!-- 5. Settings -->
+    <section class="sec" data-section="settings" aria-labelledby="h-settings" hidden>
+      <header class="sec-head">
+        <h1 id="h-settings">Settings</h1>
+        <p class="sec-sub">How the card works and when the café is open.</p>
+      </header>
+
+      <form class="card settings" id="settings-form" novalidate>
+        <h2 class="card-title">The card</h2>
+        <div class="field">
+          <label for="set-stamps">Stamps for a free drink</label>
+          <div class="stepper">
+            <button type="button" class="step" data-set-step="-1" aria-label="One fewer stamp">&minus;</button>
+            <input class="input num" id="set-stamps" type="number" min="4" max="12" step="1" inputmode="numeric">
+            <button type="button" class="step" data-set-step="1" aria-label="One more stamp">+</button>
+          </div>
+          <small>Between 4 and 12. If you lower it, cards that are already full turn into free drinks.</small>
+        </div>
+        <label class="switch" for="set-welcome">
+          <input id="set-welcome" type="checkbox">
+          <span class="track"></span>
+          <span class="text"><b>Welcome stamp on joining</b><small>New members start with one stamp already on the card.</small></span>
+        </label>
+
+        <h2 class="card-title is-second">Opening hours</h2>
+        <div class="two">
+          <label class="field" for="set-open"><span>Opens</span><input id="set-open" type="time" step="300"></label>
+          <label class="field" for="set-close"><span>Closes</span><input id="set-close" type="time" step="300"></label>
+        </div>
+        <p class="hint">Every day, on Malé time. The site and the card show "Open now" from these.</p>
+
+        <div class="form-foot">
+          <button class="btn btn-toast" type="submit" id="set-save">Save settings</button>
+          <span class="hint" id="set-hint"></span>
+        </div>
+      </form>
+
+      <div class="card demo-tools">
+        <h2 class="card-title">Demo tools</h2>
+        <p>Everything in this demo is stored in this browser only. Nothing is sent to a server, and the member card in another tab reads the same data.</p>
+        <div class="demo-row">
+          <button type="button" class="btn btn-ghost" id="reset-demo">Reset demo data</button>
+          <span class="hint">Brings back the sample members, notes and offers.</span>
+        </div>
+        <p class="demo-links"><a href="../club/" target="_blank" rel="noopener">Open the member card</a><a href="../" target="_blank" rel="noopener">Open the site</a></p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Yes / no question -->
+<dialog class="ask" id="ask" aria-labelledby="ask-title" aria-describedby="ask-body">
+  <form method="dialog">
+    <h2 id="ask-title"></h2>
+    <p id="ask-body"></p>
+    <div class="ask-actions">
+      <button class="btn btn-ghost" value="cancel" id="ask-cancel">Cancel</button>
+      <button class="btn btn-toast" value="ok" id="ask-ok">OK</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="../assets/js/brand.js"></script>
+<script src="../assets/vendor/qrcode.js"></script>
+<script src="../assets/js/store.js"></script>
+<script src="../assets/js/ui.js"></script>
+<script src="staff.js"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+.DS_Store
+node_modules/
+# Kept on the build machine only: client notes, photo credits, original photos, build tools and tests.
+NOTES.md
+CREDITS.md
+src-images/
+tools/
+tests/
