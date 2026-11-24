@@ -1,5 +1,5 @@
 /*
- * Cozé Club card: the member app.
+ * Cozé club card: what a member of the Club sees.
  * Reads and writes through window.COZE (assets/js/store.js) and redraws itself whenever the store changes,
  * including changes made in another tab by the staff counter.
  * People's names and note text always go in as text nodes (UI.h), never as HTML.
@@ -8,9 +8,9 @@
   'use strict';
 
   var C = window.COZE, U = window.UI, h = U.h;
-  var DEMO_ID = 'm_7774821';
   var TABS = ['card', 'rewards', 'notes', 'you'];
   var IMG = '../assets/img/';
+  var SITE = '../index.html', STAFF = '../staff/index.html';   // named in full: file:// cannot open a folder
   var ICON = new URL(IMG + 'icon-192.png', location.href).href;   // a full address, so it resolves the same from the service worker
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -29,7 +29,7 @@
     wasIn: false,         // were we signed in at the last draw
     seenFor: null,        // member whose notes we are tracking
     seen: {},             // note ids already known, so only new ones ring
-    prev: null,           // { id, stamps, free } at the last draw
+    prev: null,           // { id, stamps, free, lifetime } at the last draw
     popFrom: null,        // stamps from this index pop in on the next card draw
     popBand: false,       // the free drink band pops in on the next card draw
     holdFull: null,       // { until, from }: show a full row for a beat before it turns into a free drink
@@ -42,6 +42,9 @@
     welcome: false,       // a card is being created right now
     sampleAt: 0, sampleTimer: null, sampleN: 0,
     queue: [], bannerOn: false, bannerTimer: null,
+    bannerId: null,       // note id the banner is showing, so it can be taken down if the note is withdrawn
+    plain: {},            // notifications shown by the page itself (no service worker), by tag
+    toldNotSaving: false,
     swReg: null,
     askYes: null, openerKey: null
   };
@@ -99,6 +102,7 @@
       S.wasIn = true;
       el.gate.hidden = true;
       el.app.hidden = false;
+      showError(el.joinError, ''); showError(el.signInError, '');
       opts.fresh = true;
       if (S.tab === 'notes') enterNotes(me);
     }
@@ -110,7 +114,10 @@
     var inView = !!(active && view.contains(active));
     // The profile form is left alone while someone is typing in it or has unsaved changes.
     if (S.tab === 'you' && S.built === key && !opts.fresh) {
-      if (S.youDirty || (inView && /^(INPUT|SELECT|TEXTAREA)$/.test(active.tagName))) return;
+      if (S.youDirty || (inView && /^(INPUT|SELECT|TEXTAREA)$/.test(active.tagName))) {
+        refreshBirthday(me);     // the one part that can change under the form: set or removed at the bar
+        return;
+      }
     }
     var focusKey = inView && active.dataset ? active.dataset.k : null;
     var top = view.scrollTop;
@@ -139,7 +146,18 @@
     el.app.hidden = true;
     el.gate.hidden = false;
     U.clear(el.view);
-    if (was) el.gate.scrollTop = 0;
+    gateCopy();
+    if (was) {
+      // Coming back from a card: start clean, with no old errors or leftover messages.
+      el.gate.scrollTop = 0;
+      showError(el.joinError, ''); showError(el.signInError, '');
+      Array.prototype.forEach.call(document.querySelectorAll('.toast'), function (t) { if (t.parentNode) t.parentNode.removeChild(t); });
+    }
+  }
+
+  // The join screen quotes the settings, so it stays true when staff change them.
+  function gateCopy() {
+    $('gateStamps').textContent = C.fmt.word(C.state().settings.stampsForFree);
   }
 
   // Notices what changed since the last draw: new stamps, a finished row, a reward handed over.
@@ -147,15 +165,26 @@
     var p = S.prev;
     if (S.welcome) { S.popFrom = 0; S.welcome = false; }
     if (p && p.id === me.id) {
-      if (me.free > p.free) {
+      // Only a real new stamp (the all-time count went up) is animated. A stamp taken back at the bar also
+      // moves the numbers, and must not replay the pop on the stamps that are left.
+      var up = me.lifetime > p.lifetime;
+      if (up && el.qrSheet.open) {                             // so the stamp landing and the banner are seen
+        S.openerKey = null;
+        closeSheet(el.qrSheet);
+        if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+      }
+      if (up && me.free > p.free) {
         S.popBand = true;
         S.popFrom = null;
         if (!reduceMotion && !document.hidden) S.holdFull = { until: Date.now() + 1500, from: p.stamps };
-      } else if (me.stamps > p.stamps) {
+      } else if (up && me.stamps > p.stamps) {
         S.popFrom = S.popFrom == null ? p.stamps : Math.min(S.popFrom, p.stamps);
+      } else if (!up && (me.stamps !== p.stamps || me.free !== p.free)) {
+        S.popFrom = null; S.holdFull = null; clearTimeout(S.holdTimer);
+        S.popBand = me.free > p.free;
       }
     }
-    S.prev = { id: me.id, stamps: me.stamps, free: me.free };
+    S.prev = { id: me.id, stamps: me.stamps, free: me.free, lifetime: me.lifetime };
 
     var now = {};
     C.pendingRedemptions(me.id).forEach(function (r) { now[r.id] = 1; });
@@ -164,9 +193,9 @@
       var r = C.state().redemptions.filter(function (x) { return x.id === id; })[0];
       if (!r) return;
       if (r.status === 'given') {
+        // The "Enjoy" note arrives as a banner, so no second message here.
         S.justGiven = r.reward;
         setTimeout(function () { S.justGiven = null; }, 1500);
-        U.toast(r.reward === 'free' ? 'Enjoy. That one was on us.' : 'Enjoy your cheesecake.');
       } else if (r.status === 'expired') {
         U.toast('That code ran out. Nothing left your card.');
       }
@@ -217,8 +246,8 @@
 
     var left = need - got, line;
     if (hold) line = [h('b', null, 'That is ' + need + '.'), ' Your next drink is on us.'];
-    else if (got === 0 && me.free > 0) line = [h('b', null, 'A fresh row.'), ' ' + need + ' stamps to the next free drink.'];
-    else if (got === 0) line = [h('b', null, 'Your card is ready.'), ' ' + need + ' stamps to a free drink.'];
+    else if (got === 0 && me.lifetime > 0) line = [h('b', null, 'A fresh row.'), ' ' + need + ' stamps to the next free drink.'];
+    else if (got === 0) line = [h('b', null, 'Your club card is ready.'), ' ' + need + ' stamps to a free drink.'];
     else if (left === 1) line = [h('b', null, got + ' of ' + need + '.'), ' One more and the next drink is on us.'];
     else line = [h('b', null, got + ' of ' + need + '.'), ' ' + left + ' to go for a free drink.'];
 
@@ -272,9 +301,10 @@
     var img = h('img', { alt: '', width: '900', height: '600' });
     img.loading = 'lazy'; img.decoding = 'async';
     img.src = IMG + o.img;
+    var words = String(o.sticker || '').trim();      // no words, no sticker
     return h('article', { class: 'ticket' },
       h('div', { class: 'ticket-photo' }, img,
-        o.sticker ? U.sticker(o.sticker, { tone: o.tone && o.tone !== 'sun' ? o.tone : null, tilt: 9 }) : null),
+        words ? U.sticker(words, { tone: o.tone && o.tone !== 'sun' ? o.tone : null, tilt: 9 }) : null),
       h('div', { class: 'ticket-body' }, h('p', { class: 'ticket-when' }, o.when), h('h3', null, o.title), h('p', { class: 'ticket-desc' }, o.body)),
       h('div', { class: 'ticket-foot' }, h('span', null, o.valid), h('span', { class: 'num' }, 'No. ' + o.no)));
   }
@@ -320,12 +350,15 @@
     } else {
       mark = h('span', { class: 'reward-icon' }, U.icon(r.key === 'free' ? 'cup' : 'cake'));
     }
+    // A birthday can be added once from the card. After that it is the bar's job, so the link goes away.
+    var noBday = r.key === 'birthday' && !me.bday;
+    var why = noBday && me.bdayLocked ? 'Ask at the bar to add your birthday' : r.why;
     return h('article', { class: 'reward' + (r.available ? ' is-ready' : '') + (S.justGiven === r.key ? ' is-celebrate' : ''), dataset: { reward: r.key, state: r.available ? 'ready' : 'locked' } },
       h('div', { class: 'reward-body' }, h('div', null, h('h2', null, r.title), h('p', { class: 'reward-desc' }, r.desc)), mark),
       h('div', { class: 'reward-foot' },
-        h('span', { class: 'reward-why' }, r.why),
+        h('span', { class: 'reward-why' }, why),
         r.available ? h('button', { class: 'btn btn-toast btn-sm', type: 'button', dataset: { k: 'use-' + r.key }, onclick: function () { askUse(me.id, r); } }, 'Use now')
-          : (r.key === 'birthday' && !me.bday ? h('a', { class: 'linklike', href: '#you', dataset: { k: 'addbday' } }, 'Add it') : null)));
+          : (noBday && !me.bdayLocked ? h('a', { class: 'linklike', href: '#you', dataset: { k: 'addbday' } }, 'Add it') : null)));
   }
 
   function pendingTicket(r) {
@@ -333,10 +366,10 @@
     return h('article', { class: 'reward is-pending', dataset: { reward: r.key, state: 'pending' } },
       h('p', { class: 'reward-kicker' }, r.title),
       h('p', { class: 'code', 'aria-label': 'Code ' + p.code.split('').join(' ') }, p.code),
-      h('p', { class: 'reward-show' }, 'Show this to the barista'),
+      h('p', { class: 'reward-show' }, 'Show this at the bar'),
       h('p', { class: 'reward-timer' }, 'Code valid for ', h('span', { class: 'num', dataset: { expires: p.expires } }, remaining(p.expires))),
       h('button', { class: 'linklike', type: 'button', dataset: { k: 'cancel-' + r.key }, onclick: function () {
-        if (C.cancelRedeem(p.id)) U.toast('Cancelled. It is still on your card.');
+        if (C.cancelRedeem(p.id)) U.toast('Cancelled. It is still on your club card.');
       } }, 'Cancel, I will use it later'));
   }
 
@@ -399,8 +432,9 @@
     return [
       h('h1', { class: 'view-title' }, 'Notes for you'),
       h('p', { class: 'view-sub' }, 'Written to you, not to everyone.'),
+      notes.length ? h('ol', { class: 'notes' }, noteItem(notes[0])) : h('p', { class: 'empty' }, 'Nothing yet. Notes from the bar land here.'),
       permCard(),
-      notes.length ? h('ol', { class: 'notes' }, notes.map(noteItem)) : h('p', { class: 'empty' }, 'Nothing yet. Notes from the bar land here.'),
+      notes.length > 1 ? h('ol', { class: 'notes', start: '2' }, notes.slice(1).map(noteItem)) : null,
       h('section', { class: 'demobox' },
         h('p', { class: 'demobox-tag' }, 'Demo'),
         h('p', null, 'No staff counter open? Send yourself a sample note to see how one arrives.'),
@@ -434,14 +468,13 @@
   function permCard() {
     var state = permState();
     if (state === 'none') {
-      return h('section', { class: 'perm is-off', dataset: { perm: 'none' } },
-        h('b', null, 'Notifications are not available in this browser tab'),
-        h('p', null, 'On iPhone, add this page to your Home Screen first, then turn notifications on. Until then your notes wait for you here.'));
+      return h('section', { class: 'perm is-off', dataset: { perm: 'none' } }, h('div', null,
+        h('b', null, 'No notifications in this browser tab'),
+        h('p', null, 'On iPhone, notifications only work from the Home Screen. Add this page to your Home Screen and open it from there. In this demo that copy starts empty, so get your card again in it.')));
     }
     if (state === 'granted') {
-      return h('section', { class: 'perm is-on', dataset: { perm: 'granted' } },
-        h('b', null, 'Notifications are on for this device'),
-        h('p', null, 'A note from the bar will ring here even when this page is in the background.'),
+      return h('section', { class: 'perm is-on', dataset: { perm: 'granted' } }, h('div', null,
+        h('b', null, 'Notifications are on for this device')),
         h('button', { class: 'btn btn-sm', type: 'button', dataset: { k: 'permtest' }, onclick: function () {
           U.toast('Sending in 3 seconds. Switch away to see it arrive.');
           setTimeout(function () {
@@ -451,13 +484,13 @@
         } }, 'Send me a test'));
     }
     if (state === 'denied') {
-      return h('section', { class: 'perm is-off', dataset: { perm: 'denied' } },
+      return h('section', { class: 'perm is-off', dataset: { perm: 'denied' } }, h('div', null,
         h('b', null, 'Notifications are blocked for this site'),
-        h('p', null, 'Allow them in your browser settings to get notes on this device. They still arrive here in the meantime.'));
+        h('p', null, 'Allow them in your browser settings to get notes on this device. They still arrive here in the meantime.')));
     }
-    return h('section', { class: 'perm', dataset: { perm: 'default' } },
+    return h('section', { class: 'perm', dataset: { perm: 'default' } }, h('div', null,
       h('b', null, 'Get these as notifications on this phone'),
-      h('p', null, 'Your free drink, your birthday, a seat saved. Only what you allow under You.'),
+      h('p', null, 'Only the kinds you allow under You.')),
       h('button', { class: 'btn btn-sm', type: 'button', dataset: { k: 'permon' }, onclick: askPermission }, 'Turn on'));
   }
 
@@ -503,38 +536,111 @@
 
   /* ---------- You ---------- */
 
+  // The birthday part of the profile has three states: on the card (read only, removable), removed and now
+  // the bar's job to add again, or not given yet (two selects, set once).
+  function birthdayState(me) {
+    if (me.bday) return 'set:' + me.bday.d + '-' + me.bday.m;
+    return me.bdayLocked ? 'locked' : 'open';
+  }
+  function birthdayParts(me) {
+    if (me.bday) {
+      return [
+        h('span', { class: 'label' }, 'Birthday'),
+        h('p', { class: 'readonly' }, U.icon('cake'), C.fmt.birthday(me.bday)),
+        h('small', null, 'Ask at the bar to change it.'),
+        h('button', { class: 'linklike', type: 'button', dataset: { k: 'rmbday' }, onclick: function () { askRemoveBirthday(me.id); } }, 'Remove my birthday')
+      ];
+    }
+    if (me.bdayLocked) {
+      return [
+        h('span', { class: 'label' }, 'Birthday'),
+        h('p', { class: 'readonly' }, U.icon('cake'), 'Not on your club card'),
+        h('small', null, 'Ask at the bar to add it again.')
+      ];
+    }
+    return [
+      h('span', { class: 'label', id: 'bdayLabel' }, 'Birthday', h('em', null, 'optional')),
+      h('div', { class: 'pair', role: 'group', 'aria-labelledby': 'bdayLabel' },
+        options(h('select', { name: 'bd', 'aria-label': 'Birthday day' }), dayOptions(), '', 'Day'),
+        options(h('select', { name: 'bm', 'aria-label': 'Birthday month' }), monthOptions(), '', 'Month')),
+      h('small', null, 'For a slice of cheesecake in your birthday month. No year needed. You set it once here. After that, ask at the bar.')
+    ];
+  }
+  function birthdayBox(me) {
+    return h('div', { class: 'field bday', id: 'bdayBox', dataset: { state: birthdayState(me) } }, birthdayParts(me));
+  }
+  // Redraws only the birthday part, and only if it changed, so typing elsewhere in the form is left alone.
+  function refreshBirthday(me) {
+    var box = $('bdayBox');
+    if (!box || box.dataset.state === birthdayState(me)) return;
+    box.dataset.state = birthdayState(me);
+    U.fill(box, birthdayParts(me));
+  }
+  function askRemoveBirthday(memberId) {
+    ask({
+      title: 'Remove your birthday?',
+      text: ['It comes off your club card, and the birthday cheesecake goes with it.', 'To put it back you will need to ask at the bar.'],
+      yes: 'Remove it', no: 'Keep it', danger: true,
+      onYes: function () {
+        var m = C.updateMember(memberId, { bday: null });
+        if (m) { refreshBirthday(m); U.toast('Your birthday is off your club card.'); }
+      }
+    });
+  }
+
   function viewYou(me) {
     S.youDirty = false;
-    var first = h('input', { name: 'first', type: 'text', value: me.first, maxlength: '24', autocomplete: 'given-name', autocapitalize: 'words', required: true });
-    var bd = options(h('select', { name: 'bd', 'aria-label': 'Birthday day' }), dayOptions(), me.bday ? me.bday.d : '', 'Day');
-    var bm = options(h('select', { name: 'bm', 'aria-label': 'Birthday month' }), monthOptions(), me.bday ? me.bday.m : '', 'Month');
-    var usual = options(h('select', { name: 'usual' }), drinkOptions(), me.usual ? me.usual.drink : '', 'No usual yet');
-    var how = h('input', { name: 'how', type: 'text', value: (me.usual && me.usual.how) || '', maxlength: '60', placeholder: 'Less ice, oat milk' });
+    // What the form started with. Only fields the person actually changed are saved, so a change made in
+    // another tab (or at the bar) is never put back by an old value sitting in this form.
+    var init = { first: me.first, usual: (me.usual && me.usual.drink) || '', how: (me.usual && me.usual.how) || '' };
+    var first = h('input', { name: 'first', type: 'text', value: init.first, maxlength: '24', autocomplete: 'given-name', autocapitalize: 'words', required: true });
+    var usual = options(h('select', { name: 'usual' }), drinkOptions(), init.usual, 'No usual yet');
+    var how = h('input', { name: 'how', type: 'text', value: init.how, maxlength: '60', placeholder: 'Less ice, oat milk' });
     var err = h('p', { class: 'field-error', role: 'alert', hidden: true });
     function dirty() { S.youDirty = true; }
 
     var form = h('form', { class: 'panel form', id: 'youForm', novalidate: true, oninput: dirty, onchange: dirty, onsubmit: function (e) {
       e.preventDefault();
+      var now = C.member(me.id);
+      if (!now) return;
+      var patch = {}, changed = false;
       var name = first.value.trim().replace(/\s+/g, ' ');
-      if (name.length < 2) { showError(err, 'Please enter your first name.'); first.focus(); return; }
-      var d = +bd.value, m = +bm.value;
-      if ((d && !m) || (!d && m)) { showError(err, 'Choose both a day and a month, or leave both empty.'); return; }
+      if (name !== init.first) {
+        if (name.length < 2) { showError(err, 'Please enter your first name.'); first.focus(); return; }
+        patch.first = name; changed = true;
+      }
+      var bd = form.elements.namedItem('bd'), bm = form.elements.namedItem('bm');
+      if (bd && bm) {
+        var d = +bd.value, m = +bm.value;
+        if ((d && !m) || (!d && m)) { showError(err, 'Choose both a day and a month, or leave both empty.'); return; }
+        if (d && m) {
+          if (!C.validBirthday(d, m)) { showError(err, 'That date does not exist.'); return; }
+          patch.bday = { d: d, m: m }; changed = true;
+        }
+      }
+      var drink = usual.value, take = how.value.trim();
+      if (drink !== init.usual || take !== init.how) {
+        patch.usual = {
+          drink: drink !== init.usual ? drink : (now.usual && now.usual.drink) || '',
+          how: take !== init.how ? take : (now.usual && now.usual.how) || ''
+        };
+        changed = true;
+      }
       showError(err, '');
       S.youDirty = false;
-      C.updateMember(me.id, { first: name, bday: d && m ? { d: d, m: m } : null, usual: { drink: usual.value, how: how.value.trim() } });
+      if (!changed) { U.toast('Nothing was changed.'); render({}); return; }
+      C.updateMember(me.id, patch);
       U.toast('Saved.');
     } },
       h('h2', null, 'Your details'),
       h('label', { class: 'field' }, h('span', null, 'First name'), first),
       h('div', { class: 'field' }, h('span', { class: 'label' }, 'Mobile number'),
         h('p', { class: 'readonly num' }, U.icon('lock'), C.fmt.mobile(me.mobile)),
-        h('small', null, 'This is how the bar finds your card. Ask at the bar to change it.')),
-      h('fieldset', { class: 'field' }, h('legend', null, 'Birthday', h('em', null, 'optional')),
-        h('div', { class: 'pair' }, bd, bm),
-        h('small', null, 'For a slice of cheesecake in your birthday month. No year needed.')),
+        h('small', null, 'This is how the bar finds your club card. Ask at the bar to change it.')),
+      birthdayBox(me),
       h('label', { class: 'field' }, h('span', null, 'Your usual'), usual),
       h('label', { class: 'field' }, h('span', null, 'How you take it', h('em', null, 'optional')), how,
-        h('small', null, 'The barista sees this when your card comes up.')),
+        h('small', null, 'The barista sees this when your club card comes up.')),
       err,
       h('button', { class: 'btn btn-toast btn-block', type: 'submit', dataset: { k: 'save' } }, 'Save changes'));
 
@@ -558,18 +664,18 @@
         sw('quiet', 'Quiet hours', 'No notifications between 10 pm and 8 am. They wait in your inbox.')));
 
     var priv = h('section', { class: 'panel private' },
-      h('h2', null, 'Your card is private'),
-      h('p', null, 'There is no public profile and no leaderboard. Only the team at Cozé sees your card.'),
-      h('p', null, 'We keep your first name, mobile number, birthday day and month, your visits and the notes we sent you. Nothing is shared or sold.'),
+      h('h2', null, 'Your club card is private'),
+      h('p', null, 'There is no public profile and no leaderboard. Only the team at Cozé sees your club card.'),
+      h('p', null, 'We keep your first name, mobile number, birthday day and month, your usual, your visits and the notes we sent you. Nothing is shared or sold.'),
       h('div', { class: 'private-actions' },
         h('button', { class: 'btn btn-ghost', type: 'button', dataset: { k: 'download' }, onclick: function () { download(me.id); } }, U.icon('download'), 'Download my data'),
-        h('button', { class: 'btn btn-ghost', type: 'button', dataset: { k: 'signout' }, onclick: function () { C.signOut(); U.toast('Signed out on this phone. Your card is safe.'); } }, 'Sign out on this phone'),
+        h('button', { class: 'btn btn-ghost', type: 'button', dataset: { k: 'signout' }, onclick: function () { C.signOut(); U.toast('Signed out on this phone. Your club card is safe.'); } }, 'Sign out on this phone'),
         h('button', { class: 'btn btn-ghost is-danger', type: 'button', dataset: { k: 'delete' }, onclick: function () { askDelete(me.id); } }, U.icon('trash'), 'Delete my card')));
 
     return [
       h('h1', { class: 'view-title' }, 'You'),
       form, prefs, priv,
-      h('p', { class: 'foot-links' }, h('a', { href: '../' }, 'Back to the Cozé site'), h('a', { href: '../staff/' }, 'Staff counter'))
+      h('p', { class: 'foot-links' }, h('a', { href: SITE }, 'Back to the Cozé site'), h('a', { href: STAFF }, 'Staff counter'))
     ];
   }
 
@@ -661,29 +767,48 @@
 
   /* ---------- new notes: banner and system notification ---------- */
 
+  var RING_WINDOW = 2 * 60 * 1000;   // a note older than this is listed, but never rings
+
   function syncNotes() {
     var me = C.currentMember();
     if (!me) { S.seenFor = null; S.seen = {}; return; }
-    var notes = C.notesFor(me.id);
+    var notes = C.notesFor(me.id), here = {};
+    notes.forEach(function (n) { here[n.id] = 1; });
     if (S.seenFor !== me.id) {
       // First look at this card: everything already here is old news.
-      S.seenFor = me.id; S.seen = {};
-      notes.forEach(function (n) { S.seen[n.id] = 1; });
+      S.seenFor = me.id; S.seen = here;
       return;
     }
+    // A note that was withdrawn (a stamp undone at the bar) must stop ringing.
+    Object.keys(S.seen).forEach(function (id) {
+      if (!here[id]) { delete S.seen[id]; unring(id); }
+    });
     var fresh = notes.filter(function (n) { return !S.seen[n.id]; });
     if (!fresh.length) return;
     fresh.forEach(function (n) { S.seen[n.id] = 1; });
+    var oldest = Date.now() - RING_WINDOW;
     fresh.reverse().forEach(function (n) {           // oldest of the new ones first
-      if (n.read) return;
-      banner(n.title, n.body);
+      if (n.read || new Date(n.at).getTime() < oldest) return;
+      banner(n.title, n.body, n.id);
       if (n.push && permState() === 'granted' && !(me.prefs.quiet && quietNow())) systemNote(n.title, n.body, n.id);
     });
     if (S.tab === 'notes') scheduleRead();
   }
 
-  function banner(title, body) {
-    S.queue.push({ title: title, body: body });
+  // Takes down everything that announced a note: the banner, its place in the queue, the system notification.
+  function unring(id) {
+    S.queue = S.queue.filter(function (q) { return q.id !== id; });
+    if (S.bannerOn && S.bannerId === id) hideBanner(false);
+    if (S.plain[id]) { try { S.plain[id].close(); } catch (e) { /* already gone */ } delete S.plain[id]; }
+    if (S.swReg && S.swReg.getNotifications) {
+      try {
+        S.swReg.getNotifications({ tag: id }).then(function (list) { list.forEach(function (n) { n.close(); }); }, function () {});
+      } catch (e) { /* not supported here */ }
+    }
+  }
+
+  function banner(title, body, id) {
+    S.queue.push({ title: title, body: body, id: id || null });
     pump();
   }
   function pump() {
@@ -691,6 +816,7 @@
     var n = S.queue.shift();
     el.bannerTitle.textContent = n.title;
     el.bannerBody.textContent = n.body;
+    S.bannerId = n.id;
     el.banner.hidden = false;
     void el.banner.offsetWidth;                       // so the slide-in transition runs
     el.banner.classList.add('is-on');
@@ -706,6 +832,7 @@
   function hideBanner(now) {
     clearTimeout(S.bannerTimer);
     el.banner.classList.remove('is-on');
+    S.bannerId = null;
     if (now) { S.bannerOn = false; el.banner.hidden = true; return; }
     if (!S.bannerOn) return;
     S.bannerOn = false;
@@ -728,11 +855,14 @@
 
   function systemNote(title, body, tag) {
     if (permState() !== 'granted') return;
+    tag = tag || 'coze';
     var url = location.href.split('#')[0].split('?')[0] + '#notes';
-    var opts = { body: body, icon: ICON, badge: ICON, tag: tag || 'coze', data: { url: url } };
+    var opts = { body: body, icon: ICON, badge: ICON, tag: tag, data: { url: url } };
     function plain() {
       try {
         var n = new window.Notification(title, opts);
+        S.plain[tag] = n;
+        n.onclose = function () { if (S.plain[tag] === n) delete S.plain[tag]; };
         n.onclick = function () { window.focus(); go('notes'); n.close(); };
       } catch (e) { /* some phones only allow notifications through a service worker */ }
     }
@@ -776,6 +906,7 @@
     e.preventDefault();
     var d = +jf.namedItem('bd').value, m = +jf.namedItem('bm').value;
     if ((d && !m) || (!d && m)) { showError(el.joinError, 'Choose both a day and a month for your birthday, or leave both empty.'); return; }
+    if (d && m && !C.validBirthday(d, m)) { showError(el.joinError, 'That date does not exist.'); return; }
     var notes = jf.namedItem('notes').checked, member;
     S.welcome = true;
     try {
@@ -795,44 +926,65 @@
     el.joinForm.reset();
     if (S.tab !== 'card') go('card');
     var hello = C.notesFor(member.id)[0];
-    if (hello) banner(hello.title, hello.body);
+    if (hello) banner(hello.title, hello.body, hello.id);
   });
 
   el.signInForm.addEventListener('submit', function (e) {
     e.preventDefault();
     var field = el.signInForm.elements.namedItem('mobile');
-    if (!C.validMobile(field.value)) { showError(el.signInError, 'Enter the 7 digit mobile number your card is under.'); return; }
-    if (!C.signIn(field.value)) { showError(el.signInError, 'No card is under that number. Check it, or get a new card above.'); return; }
+    if (!C.validMobile(field.value)) { showError(el.signInError, 'Enter the 7 digit mobile number your club card is under.'); return; }
+    if (!C.signIn(field.value)) { showError(el.signInError, 'No club card is under that number. Check it, or get a new one above.'); return; }
     showError(el.signInError, '');
     el.signInForm.reset();
     if (S.tab !== 'card') go('card');
   });
 
+  // The demo card can always be opened: if Leena's card was deleted, the store puts it back.
   $('demoCard').addEventListener('click', function () {
-    if (!C.signInAs(DEMO_ID)) { U.toast('The demo card was deleted. Reset the demo data in the staff counter, under Settings.'); return; }
+    C.signInAs(C.demoMember().id);
     if (S.tab !== 'card') go('card');
   });
 
   /* ---------- start ---------- */
 
   (function start() {
-    var q;
+    var q, hello = null;
     try { q = new URLSearchParams(location.search); } catch (e) { q = null; }
     if (q) {
-      var first = q.get('first'), mobile = q.get('mobile'), usual = q.get('usual');
+      var first = (q.get('first') || '').trim(), mobile = (q.get('mobile') || '').trim(), usual = q.get('usual');
+      if (usual && !C.drink(usual)) usual = null;
       if (q.get('demo') === '1') {
-        C.signInAs(DEMO_ID);
+        C.signInAs(C.demoMember().id);
       } else if (first || mobile) {
-        // Sent here from the join form on the site.
-        var known = mobile && C.validMobile(mobile) ? C.byMobile(C.validMobile(mobile)) : null;
-        if (known) C.signInAs(known.id);
-        else {
-          if (C.currentMember()) C.signOut();
-          if (first) jf.namedItem('first').value = first.slice(0, 24);
-          if (mobile) jf.namedItem('mobile').value = String(mobile).replace(/[^\d\s]/g, '').slice(0, 9);
+        // Sent here by the join form on the site. A number that already has a card opens it. A new name and
+        // number get their card straight away, with no second form.
+        var valid = mobile ? C.validMobile(mobile) : null;
+        var known = valid ? C.byMobile(valid) : null;
+        if (known) {
+          C.signInAs(known.id);
+        } else {
+          var made = null, why = '';
+          if (first && valid) {
+            S.welcome = true;
+            try { made = C.join({ first: first, mobile: valid, usual: { drink: usual || '', how: '' } }); }
+            catch (err) { why = err.message; }
+            if (!made) S.welcome = false;
+          } else if (mobile && !valid) {
+            why = 'Enter a Maldives mobile number, 7 digits starting with 7 or 9.';
+          }
+          if (made) {
+            hello = C.notesFor(made.id)[0] || null;
+            usual = null;
+          } else {
+            // Something is missing or wrong: show the form with what we were given, and say what to fix.
+            if (C.currentMember()) C.signOut();
+            jf.namedItem('first').value = first.slice(0, 24);
+            jf.namedItem('mobile').value = mobile.replace(/[^\d\s+]/g, '').slice(0, 16);
+            showError(el.joinError, why);
+          }
         }
       }
-      if (usual && C.drink(usual)) {
+      if (usual) {
         jf.namedItem('usual').value = usual;
         var cur = C.currentMember();
         if (cur && !(cur.usual && cur.usual.drink)) C.updateMember(cur.id, { usual: { drink: usual, how: '' } });
@@ -842,9 +994,21 @@
       }
     }
 
-    S.tab = tabFromHash();
-    C.on(function () { syncNotes(); render({}); });
+    S.tab = hello ? 'card' : tabFromHash();
+    C.on(function (reason) {
+      if (reason === 'not-saving') {
+        if (!S.toldNotSaving) {
+          S.toldNotSaving = true;
+          U.toast('This browser will not save anything, so changes stay in this tab only.', { ms: 9000 });
+        }
+        return;
+      }
+      syncNotes();
+      render({});
+    });
     syncNotes();
     render({ fresh: true });
+    if (hello) banner(hello.title, hello.body, hello.id);
+    if (!el.joinError.hidden && el.joinError.scrollIntoView) el.joinError.scrollIntoView({ block: 'center' });
   })();
 })();

@@ -126,11 +126,14 @@
       if (diff < 3600000) return Math.floor(diff / 60000) + ' min ago';
       var today = male().key, then = male(t).key;
       if (then === today) return Math.floor(diff / 3600000) + ' h ago';
-      if (then === male(Date.now() - DAY).key) return 'Yesterday';
-      if (diff < 7 * DAY) return Math.floor(diff / DAY) + ' days ago';
+      var days = Math.round((Date.parse(today) - Date.parse(then)) / DAY);   // calendar days, on Malé time
+      if (days === 1) return 'Yesterday';
+      if (days > 1 && days < 7) return days + ' days ago';
       return fmt.date(t);
     },
-    name: function (m) { return m ? (m.first + (m.last ? ' ' + m.last : '')) : ''; }
+    name: function (m) { return m ? (m.first + (m.last ? ' ' + m.last : '')) : ''; },
+    // 10 -> "Ten" (used in copy such as "Ten stamps, then one on us")
+    word: function (n) { return ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve'][n] || String(n); }
   };
 
   /* ---------- seed data ---------- */
@@ -173,7 +176,7 @@
         id: 'm_' + p[2],
         card: 'CZ-' + p[2].slice(-4),
         first: p[0], last: p[1], mobile: p[2],
-        bday: bday,
+        bday: bday, bdayLocked: !!bday,
         joined: iso(now - joinedDays * DAY),
         usual: { drink: p[7], how: p[8] },
         prefs: { rewards: true, personal: i !== 5, drinks: i !== 5 && i !== 12, quiet: i === 2 },
@@ -257,8 +260,25 @@
   }
   function write() {
     if (memoryOnly) return;
-    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { memoryOnly = true; }
+    state.tok = Math.random().toString(36).slice(2);   // marks this write, so another tab can tell it is behind
+    try { localStorage.setItem(KEY, JSON.stringify(state)); }
+    catch (e) {
+      // Storage is full or blocked. Carry on in this tab only, and let the page say so.
+      memoryOnly = true;
+      setTimeout(function () { emit('not-saving'); }, 0);
+    }
   }
+  // Another tab may have written since this one last looked: a tab brought back by the Back button, or one
+  // that missed an event. Pick up the newer copy before changing anything, so an old copy is never written back.
+  function sync(tell) {
+    if (seeding || memoryOnly || !state) return false;
+    var s = read();
+    if (!s || s.tok === state.tok) return false;
+    state = s;
+    if (tell) emit('remote');
+    return true;
+  }
+  function latest() { load(); sync(false); return state; }
   function load() {
     if (state) return state;
     state = read();
@@ -293,6 +313,10 @@
       emit('session');
     }
   });
+  window.addEventListener('pageshow', function (e) { if (e.persisted) sync(true); });
+  if (typeof document !== 'undefined' && document.addEventListener) {
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) sync(true); });
+  }
 
   /* ---------- members ---------- */
 
@@ -318,11 +342,12 @@
     var list = load().members.slice();
     if (!q) return list.sort(function (a, b) { return a.lastVisit < b.lastVisit ? 1 : -1; });
     var qd = digits(q);
+    if (/^\+\s*960/.test(q) || (qd.length > 7 && qd.slice(0, 3) === '960')) qd = qd.slice(3);   // "+960 777 4821"
     var isCard = /^cz[\s-]?\d+$/.test(q);
     return list.map(function (m) {
       var score = 0;
       var name = (m.first + ' ' + (m.last || '')).toLowerCase();
-      if (isCard || (qd && qd.length <= 4 && qd === q)) {
+      if (isCard || (qd && qd.length <= 4 && qd === q.replace(/\s+/g, ''))) {
         if (m.card.slice(3) === qd) score = 100; else if (m.card.slice(3).indexOf(qd) === 0) score = 60;
       }
       if (!isCard && qd.length >= 3 && m.mobile.indexOf(qd) !== -1) score = Math.max(score, m.mobile === qd ? 95 : 50);
@@ -372,22 +397,30 @@
   }
 
   function merge(text, m) {
-    return String(text == null ? '' : text).replace(/\{name\}/gi, m ? m.first : 'there');
+    var name = m ? m.first : 'there';
+    return String(text == null ? '' : text).replace(/\{name\}/gi, function () { return name; });
   }
 
+  var MONTH_DAYS = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  function validBirthday(d, mo) {
+    d = Math.round(+d); mo = Math.round(+mo);
+    return d >= 1 && mo >= 1 && mo <= 12 && d <= MONTH_DAYS[mo - 1];
+  }
+  function cleanBday(b) { return b && validBirthday(b.d, b.m) ? { d: Math.round(+b.d), m: Math.round(+b.m) } : null; }
+
   function join(data) {
-    load();
+    latest();
     var first = String(data.first || '').trim().replace(/\s+/g, ' ');
     if (first.length < 2) throw new Error('Please enter your first name.');
     var mobile = validMobile(data.mobile);
     if (!mobile) throw new Error('Enter a Maldives mobile number, 7 digits starting with 7 or 9.');
     if (byMobile(mobile)) throw new Error('That number already has a card. Sign in with it instead.');
-    var bday = data.bday && +data.bday.d && +data.bday.m ? { d: +data.bday.d, m: +data.bday.m } : null;
+    var bday = cleanBday(data.bday);
     var prefs = data.prefs || {};
     var start = state.settings.welcomeStamp ? 1 : 0;
     var m = {
       id: 'm_' + mobile, card: newCard(),
-      first: first.charAt(0).toUpperCase() + first.slice(1), last: '', mobile: mobile, bday: bday,
+      first: first.charAt(0).toUpperCase() + first.slice(1), last: '', mobile: mobile, bday: bday, bdayLocked: !!bday,
       joined: iso(Date.now()),
       usual: { drink: (data.usual && data.usual.drink) || '', how: (data.usual && data.usual.how) || '' },
       prefs: { rewards: prefs.rewards !== false, personal: prefs.personal !== false, drinks: prefs.drinks !== false, quiet: !!prefs.quiet },
@@ -402,11 +435,18 @@
   }
 
   function updateMember(id, patch) {
+    latest();
     var m = member(id);
     if (!m) return null;
     if (patch.first != null) { var f = String(patch.first).trim(); if (f.length >= 2) m.first = f; }
     if (patch.last != null) m.last = String(patch.last).trim();
-    if (patch.bday !== undefined) m.bday = patch.bday && +patch.bday.d && +patch.bday.m ? { d: +patch.bday.d, m: +patch.bday.m } : null;
+    // A birthday can be added once from the card and removed at any time. Changing it afterwards is done at
+    // the bar (patch.staff), or the birthday treat could be moved to whichever month suits.
+    if (patch.bday !== undefined) {
+      var b = cleanBday(patch.bday);
+      if (!b) m.bday = null;
+      else if (!m.bdayLocked || patch.staff) { m.bday = b; m.bdayLocked = true; }
+    }
     if (patch.usual) m.usual = { drink: patch.usual.drink || '', how: String(patch.usual.how || '').slice(0, 60) };
     if (patch.prefs) Object.keys(patch.prefs).forEach(function (k) { m.prefs[k] = !!patch.prefs[k]; });
     commit('member');
@@ -415,7 +455,7 @@
 
   // Removes the member and everything tied to them. Used by "Delete my card".
   function deleteMember(id) {
-    load();
+    latest();
     state.members = state.members.filter(function (m) { return m.id !== id; });
     state.notes = state.notes.filter(function (n) { return n.to !== id; });
     state.redemptions = state.redemptions.filter(function (r) { return r.memberId !== id; });
@@ -435,13 +475,35 @@
     };
   }
 
+  // The sample member that the "Try the demo card" buttons open. If her card was deleted, she is put back
+  // with her notes, so the demo never reaches a dead end.
+  var DEMO_ID = 'm_7774821';
+  function demoMember() {
+    latest();
+    var m = member(DEMO_ID);
+    if (m) return m;
+    var fresh = seed();
+    m = fresh.members.filter(function (x) { return x.id === DEMO_ID; })[0];
+    state.members.unshift(m);
+    fresh.notes.forEach(function (n) { if (n.to === DEMO_ID) state.notes.push(n); });
+    state.notes.sort(function (a, b) { return a.at < b.at ? 1 : -1; });
+    commit('member');
+    return m;
+  }
+
   /* ---------- the member signed in on this browser ---------- */
 
+  var sessionMem = null, sessionInMemory = false;
   function sessionId() {
-    try { return localStorage.getItem(SESSION_KEY) || null; } catch (e) { return window.__cozeSession || null; }
+    if (sessionInMemory) return sessionMem;
+    try { return localStorage.getItem(SESSION_KEY) || null; } catch (e) { return sessionMem; }
   }
   function setSession(id) {
-    try { if (id) localStorage.setItem(SESSION_KEY, id); else localStorage.removeItem(SESSION_KEY); } catch (e) { window.__cozeSession = id; }
+    sessionMem = id || null;
+    try {
+      if (id) localStorage.setItem(SESSION_KEY, id); else localStorage.removeItem(SESSION_KEY);
+      sessionInMemory = false;
+    } catch (e) { sessionInMemory = true; }
   }
   function currentMember() { var id = sessionId(); return id ? member(id) : null; }
   function signIn(mobile) {
@@ -459,6 +521,7 @@
   /* ---------- stamps ---------- */
 
   function addStamps(id, n, opts) {
+    latest();
     var m = member(id);
     n = Math.max(1, Math.min(10, Math.round(+n || 1)));
     if (!m) return null;
@@ -473,7 +536,9 @@
     state.activity.unshift(act);
 
     var batch = uid('b');
-    if (earned) {
+    if (earned > 1) {
+      act.noteIds.push(pushNote({ batch: batch, to: m.id, kind: 'reward', auto: true, title: earned + ' free drinks on your card', body: 'That filled your card ' + earned + ' times over, {name}. Show it at the bar whenever you like.' }).id);
+    } else if (earned) {
       act.noteIds.push(pushNote({ batch: batch, to: m.id, kind: 'reward', auto: true, title: 'Your next drink is on us', body: 'That is ' + need + ' stamps, {name}. Show your card and pick anything on the menu.' }).id);
     } else {
       var left = need - m.stamps;
@@ -489,7 +554,7 @@
 
   // Takes back the most recent stamp entry for a member, if nothing has happened on the card since.
   function undo(activityId) {
-    load();
+    latest();
     var act = null;
     for (var i = 0; i < state.activity.length; i++) if (state.activity[i].id === activityId) { act = state.activity[i]; break; }
     if (!act || act.type !== 'stamp' || !act.before) return false;
@@ -501,6 +566,8 @@
     var redeeming = state.redemptions.some(function (r) { return r.memberId === m.id && r.status === 'pending'; });
     if (newer || redeeming) return false;
     m.stamps = act.before.stamps; m.free = act.before.free; m.lifetime = act.before.lifetime; m.lastVisit = act.before.lastVisit;
+    var need = state.settings.stampsForFree;
+    while (m.stamps >= need) { m.stamps -= need; m.free += 1; }
     state.notes = state.notes.filter(function (n) { return (act.noteIds || []).indexOf(n.id) === -1; });
     state.activity = state.activity.filter(function (a) { return a.id !== act.id; });
     commit('undo');
@@ -548,6 +615,7 @@
 
   // The member taps "Use now": they get a short code to show at the bar. Nothing is deducted until staff confirm.
   function startRedeem(memberId, key) {
+    latest();
     var m = member(memberId);
     if (!m) return null;
     var list = rewardsFor(m), reward = null;
@@ -562,7 +630,7 @@
     return r;
   }
   function cancelRedeem(id) {
-    var r = load().redemptions.filter(function (x) { return x.id === id; })[0];
+    var r = latest().redemptions.filter(function (x) { return x.id === id; })[0];
     if (!r || r.status !== 'pending') return false;
     r.status = 'cancelled';
     commit('redeem-cancel');
@@ -570,6 +638,7 @@
   }
   // Staff confirm that the drink was handed over. Only now does it leave the card.
   function confirmRedeem(id, by) {
+    latest();
     expireOld();
     var r = state.redemptions.filter(function (x) { return x.id === id; })[0];
     if (!r || r.status !== 'pending') return false;
@@ -580,7 +649,7 @@
     r.status = 'given'; r.givenAt = iso(Date.now()); r.by = by || 'Counter 1';
     m.lastVisit = r.givenAt;
     state.activity.unshift({ id: uid('a'), at: r.givenAt, memberId: m.id, type: 'redeem', n: 1, reward: r.reward, by: r.by });
-    pushNote({ to: m.id, kind: 'reward', auto: true, title: 'Enjoy, {name}', body: r.reward === 'free' ? 'Your free drink is on its way. Your card starts a fresh row of stamps.' : 'Happy birthday month. Your cheesecake is on us.' });
+    pushNote({ to: m.id, kind: 'reward', auto: true, title: 'Enjoy, {name}', body: r.reward === 'free' ? 'Your free drink is on its way.' + (m.stamps === 0 && m.free === 0 ? ' Your card starts a fresh row of stamps.' : '') : 'Happy birthday month. Your cheesecake is on us.' });
     commit('redeem');
     return true;
   }
@@ -601,7 +670,7 @@
   // msg: { to: id or [ids], kind, title, body, replies: [a, b] or null, by }
   // People who switched that kind of note off are skipped and reported back, never messaged.
   function sendNote(msg) {
-    load();
+    latest();
     var ids = Array.isArray(msg.to) ? msg.to : [msg.to];
     var kind = NOTE_KINDS[msg.kind] ? msg.kind : 'personal';
     var batch = uid('b'), sent = [], skipped = [];
@@ -615,7 +684,7 @@
     return { batch: batch, sent: sent, skipped: skipped };
   }
   function markRead(noteId) {
-    var n = load().notes.filter(function (x) { return x.id === noteId; })[0];
+    var n = latest().notes.filter(function (x) { return x.id === noteId; })[0];
     if (!n || n.read) return false;
     n.read = iso(Date.now());
     commit('read');
@@ -623,12 +692,12 @@
   }
   function markAllRead(memberId) {
     var now = iso(Date.now()), any = false;
-    load().notes.forEach(function (n) { if (n.to === memberId && !n.read) { n.read = now; any = true; } });
+    latest().notes.forEach(function (n) { if (n.to === memberId && !n.read) { n.read = now; any = true; } });
     if (any) commit('read');
     return any;
   }
   function reply(noteId, text) {
-    var n = load().notes.filter(function (x) { return x.id === noteId; })[0];
+    var n = latest().notes.filter(function (x) { return x.id === noteId; })[0];
     if (!n || !n.replies || n.replies.indexOf(text) === -1) return false;
     n.reply = { text: text, at: iso(Date.now()) };
     if (!n.read) n.read = n.reply.at;
@@ -641,7 +710,7 @@
     load().notes.forEach(function (n) {
       if (n.auto) return;
       if (!groups[n.batch]) {
-        groups[n.batch] = { batch: n.batch, at: n.at, kind: n.kind, title: n.raw ? n.raw.title : n.title, body: n.raw ? n.raw.body : n.body, by: n.by, notes: [] };
+        groups[n.batch] = { batch: n.batch, at: n.at, kind: n.kind, title: n.title, body: n.body, sample: n.to, rawTitle: n.raw ? n.raw.title : n.title, rawBody: n.raw ? n.raw.body : n.body, by: n.by, notes: [] };
         order.push(n.batch);
       }
       var g = groups[n.batch];
@@ -674,20 +743,21 @@
   /* ---------- offers, settings, numbers ---------- */
 
   function saveOffers(offers) {
-    load();
+    latest();
+    var text = function (v, max) { return String(v == null ? '' : v).replace(/\s+/g, ' ').trim().slice(0, max); };
     state.offers = offers.map(function (o, i) {
       var old = state.offers[i] || {};
       return {
         id: o.id || old.id || uid('o'), no: o.no || old.no || '0' + (41 + i),
-        when: String(o.when || '').slice(0, 60), title: String(o.title || '').slice(0, 70), body: String(o.body || '').slice(0, 160),
-        valid: String(o.valid || '').slice(0, 40), sticker: String(o.sticker || '').slice(0, 22),
+        when: text(o.when, 60), title: text(o.title, 70) || old.title || 'This week', body: text(o.body, 160),
+        valid: text(o.valid, 40), sticker: text(o.sticker, 22),
         img: o.img || old.img || 'offer-coffee.webp', tone: o.tone || old.tone || 'sun'
       };
     });
     commit('offers');
   }
   function saveSettings(patch) {
-    load();
+    latest();
     if (patch.stampsForFree != null) state.settings.stampsForFree = Math.max(4, Math.min(12, Math.round(+patch.stampsForFree) || 10));
     if (patch.welcomeStamp != null) state.settings.welcomeStamp = !!patch.welcomeStamp;
     if (/^\d\d:\d\d$/.test(patch.open || '')) state.settings.open = patch.open;
@@ -738,11 +808,11 @@
   }
 
   function reset() {
+    setSession(null);   // first, so no other tab sees the old member next to a fresh set of "new" notes
     seeding = true;
     state = seed();
     write();
     seeding = false;
-    setSession(null);
     emit('reset');
   }
 
@@ -760,13 +830,14 @@
   window.COZE = {
     VERSION: VERSION,
     DRINKS: DRINKS, MENU: MENU, LEVELS: LEVELS, NOTE_KINDS: NOTE_KINDS, SEGMENTS: SEGMENTS, MONTHS: MONTHS,
-    REDEEM_MINUTES: REDEEM_MINUTES, STAFF_PASSCODE: STAFF_PASSCODE,
+    REDEEM_MINUTES: REDEEM_MINUTES, STAFF_PASSCODE: STAFF_PASSCODE, DEMO_ID: DEMO_ID, demoMember: demoMember,
     state: load,
     on: function (fn) { listeners.push(fn); return function () { listeners = listeners.filter(function (f) { return f !== fn; }); }; },
     drink: function (id) { return DRINKS.filter(function (d) { return d.id === id; })[0] || null; },
     usualText: function (m) { var d = m && m.usual ? window.COZE.drink(m.usual.drink) : null; return d ? d.name + (m.usual.how ? ', ' + m.usual.how.charAt(0).toLowerCase() + m.usual.how.slice(1) : '') : ''; },
     members: function () { return load().members; },
-    member: member, byMobile: byMobile, validMobile: validMobile, findMembers: findMembers, level: level,
+    member: member, byMobile: byMobile, validMobile: validMobile, validBirthday: validBirthday, findMembers: findMembers, level: level,
+    saving: function () { return !memoryOnly; },
     join: join, updateMember: updateMember, deleteMember: deleteMember, exportMember: exportMember,
     currentMember: currentMember, signIn: signIn, signInAs: signInAs, signOut: signOut,
     addStamps: addStamps, undo: undo,

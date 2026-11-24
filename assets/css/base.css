@@ -142,7 +142,7 @@ button { cursor: pointer; }
 .field-error { font-size: 14px; font-weight: 600; color: var(--danger); }
 
 /* On/off switch built on a real checkbox */
-.switch { display: flex; align-items: flex-start; gap: 14px; cursor: pointer; }
+.switch { position: relative; display: flex; align-items: flex-start; gap: 14px; cursor: pointer; }
 .switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .switch .track {
   flex: none; width: 46px; height: 28px; margin-top: 1px; border-radius: 999px;
@@ -182,8 +182,19 @@ button { cursor: pointer; }
   animation: toast-in 0.25s ease both;
 }
 .toast span { flex: 1; }
-.toast button { flex: none; background: none; border: 0; padding: 4px 6px; color: var(--sun); font-weight: 700; font-size: 14px; }
+.toast button { flex: none; min-width: 56px; min-height: 44px; margin: -9px -8px -9px 0; padding: 0 10px; background: none; border: 0; color: var(--sun); font-weight: 700; font-size: 15px; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* The "Demo preview" switcher, the same on the site, the club card and the staff counter. Each page places it. */
+.demo-switch { display: flex; align-items: center; gap: 2px; padding: 5px; border-radius: 999px; background: var(--card); font-size: 13px; font-weight: 600; }
+.demo-label { padding: 0 8px 0 12px; color: var(--muted); white-space: nowrap; }
+.demo-switch a { display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px; border-radius: 999px; color: var(--espresso); text-decoration: none; white-space: nowrap; }
+.demo-switch a[aria-current] { background: var(--espresso); color: var(--paper); }
+.demo-switch a:not([aria-current]):hover { background: var(--butter); }
+/* As a slim strip across the top of a phone screen */
+.demo-switch.is-strip { justify-content: center; padding: 3px 6px; border-radius: 0; background: var(--butter); }
+.demo-switch.is-strip a { min-height: 40px; }
+.demo-switch.is-strip .demo-label { padding-left: 4px; }
 
 /* Dialogs */
 dialog { color: var(--ink); }

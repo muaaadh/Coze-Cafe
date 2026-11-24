@@ -1,7 +1,7 @@
 /*
  * Cozé staff counter.
  * Reads and writes the shared demo store (window.COZE). Every change in the store, from this tab or
- * from a member's card in another tab, redraws the section that is open.
+ * from a club card in another tab, redraws the section that is open.
  * Names and note text typed by people only ever go in as text nodes (UI.h), never as HTML.
  */
 (function () {
@@ -37,7 +37,8 @@
 
   function $(sel, root) { return (root || document).querySelector(sel); }
   function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
-  function wide() { return window.matchMedia('(min-width: 861px)').matches; }
+  function wide() { return window.matchMedia('(min-width: 861px)').matches; }     // sidebar layout
+  function phone() { return window.matchMedia('(max-width: 700px)').matches; }    // single column
   function lowerFirst(s) { return /^[A-Z][a-z]/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s; }
   function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
   function need() { return C.state().settings.stampsForFree; }
@@ -47,7 +48,18 @@
   var closeToast = null;
   function say(message, o) {
     if (closeToast) closeToast();
+    // On a phone the message lies over the brand row of the top bar: clear of the Add buttons,
+    // and not on top of the customer's name either.
+    var bar = $('.side');
+    var top = app.hidden || wide() ? 0 : Math.max(0, bar.getBoundingClientRect().top);
+    document.documentElement.style.setProperty('--toast-top', (top + 4) + 'px');
     closeToast = U.toast(message, o);
+  }
+
+  // The height of the top bar on phones and tablets, for things that stick underneath it.
+  function measureBar() {
+    var hgt = app.hidden || wide() ? 0 : $('.side').offsetHeight;
+    document.documentElement.style.setProperty('--bar-h', hgt + 'px');
   }
 
   function svg(tag, attrs) {
@@ -58,17 +70,24 @@
   }
 
   // Rebuild a region without losing the keyboard's place: the focused control is found again by its data-k.
+  // While it is empty the region keeps its height, and the page is put back where it was, so nothing
+  // on screen jumps under a finger.
   function redraw(box, build, fallback) {
     var a = document.activeElement;
     var had = !!(a && a !== document.body && box.contains(a));
     var key = had && a.dataset ? a.dataset.k : null;
+    var x = window.scrollX, y = window.scrollY, held = box.style.minHeight;
+    box.style.minHeight = box.offsetHeight + 'px';
     U.clear(box);
     build(box);
-    if (!had) return;
-    var next = key ? box.querySelector('[data-k="' + key + '"]') : null;
-    if (next && next.disabled) next = box.querySelector('[data-k="addn"]');
-    if (!next && fallback) next = fallback();
-    if (next) next.focus({ preventScroll: true });
+    box.style.minHeight = held;
+    if (had) {
+      var next = key ? box.querySelector('[data-k="' + key + '"]') : null;
+      if (next && next.disabled) next = box.querySelector('[data-k="addn"]');
+      if (!next && fallback) next = fallback();
+      if (next) next.focus({ preventScroll: true });
+    }
+    if (window.scrollX !== x || window.scrollY !== y) window.scrollTo(x, y);
   }
 
   /* ---------- yes / no question ---------- */
@@ -110,6 +129,8 @@
   function showGate() {
     app.hidden = true;
     gate.hidden = false;
+    document.body.classList.remove('is-app');
+    measureBar();
     $('#gate-code').value = '';
     $('#gate-code').removeAttribute('aria-invalid');
     $('#gate-error').textContent = '';
@@ -118,8 +139,19 @@
   function showApp() {
     gate.hidden = true;
     app.hidden = false;
+    document.body.classList.add('is-app');
+    measureBar();
     S.section = null;
     route();
+    if (!C.saving()) notSaving();
+  }
+
+  // Private windows can refuse to store anything. Say so once.
+  var toldNotSaving = false;
+  function notSaving() {
+    if (toldNotSaving) return;
+    toldNotSaving = true;
+    say('This browser will not save anything, so changes stay in this tab only.', { ms: 9000 });
   }
 
   $('#gate-form').addEventListener('submit', function (e) {
@@ -155,7 +187,7 @@
       if (closeToast) closeToast();
       // A scanner types into whatever has focus, so the counter starts in the search field.
       if (focusNext) focusNext.focus({ preventScroll: true });
-      else if (sec === 'counter' && wide()) $('#find').focus({ preventScroll: true });
+      else if (sec === 'counter' && !phone()) $('#find').focus({ preventScroll: true });
     }
     focusNext = null;
   }
@@ -229,7 +261,9 @@
           h('span', null, r.title),
           h('b', { class: 'code num' }, r.code),
           h('span', { class: 'num dim', dataset: { expires: r.expires } }, countdown(r.expires)),
-          h('button', { type: 'button', class: 'btn btn-sm', dataset: { k: 'wait:' + r.id }, onclick: function () { selectMember(r.memberId); } }, 'Open card'));
+          h('span', { class: 'waiting-actions' },
+            h('button', { type: 'button', class: 'btn btn-ghost btn-sm', dataset: { k: 'wait-open:' + r.id }, onclick: function () { selectMember(r.memberId); } }, 'Open card'),
+            h('button', { type: 'button', class: 'btn btn-toast btn-sm', dataset: { k: 'wait-give:' + r.id }, onclick: function () { confirmWaiting(r, m); } }, U.icon('check'), 'Confirm: given')));
       })));
     });
   }
@@ -268,10 +302,7 @@
     renderResults();
     renderMember();
     syncTick();
-    if (!wide()) {
-      var panel = $('#member-panel');
-      panel.scrollIntoView({ block: 'start', behavior: 'smooth' });
-    }
+    if (phone()) $('#member-panel').scrollIntoView({ block: 'start', behavior: 'smooth' });
   }
 
   var find = $('#find');
@@ -342,12 +373,16 @@
       var n = need(), lv = C.level(m), usual = C.usualText(m), today = C.male();
       var left = n - m.stamps;
 
-      box.appendChild(h('div', { class: 'mp-head' },
-        h('div', null,
-          h('h2', { class: 'mp-name', id: 'mp-name' }, C.fmt.name(m)),
-          h('p', { class: 'mp-meta num' }, m.card, sep(), C.fmt.mobile(m.mobile)),
-          h('p', { class: 'mp-meta' }, 'Member since ' + C.fmt.monthYear(m.joined), sep(), 'Last visit ' + lowerFirst(C.fmt.ago(m.lastVisit)))),
-        h('span', { class: 'level is-' + lv.id }, lv.name)));
+      box.appendChild(h('div', { class: 'mp-top' },
+        h('div', { class: 'mp-head' },
+          h('div', null,
+            h('h2', { class: 'mp-name', id: 'mp-name' }, C.fmt.name(m)),
+            h('p', { class: 'mp-meta num' }, m.card, sep(), C.fmt.mobile(m.mobile))),
+          h('span', { class: 'level is-' + lv.id }, lv.name)),
+        // A row of its own, full width, so it reads in one line and never changes the height above the buttons.
+        h('p', { class: 'mp-meta mp-facts' },
+          h('span', null, 'Member since ' + C.fmt.monthYear(m.joined)),
+          h('span', null, 'Last visit ' + lowerFirst(C.fmt.ago(m.lastVisit))))));
 
       if (m.bday && m.bday.m === today.m) {
         box.appendChild(h('p', { class: 'mp-flag' }, U.icon('cake'),
@@ -357,6 +392,15 @@
       box.appendChild(h('div', { class: 'mp-usual' },
         h('p', { class: 'mp-label' }, 'Usual'),
         h('p', { class: 'mp-usual-text' + (usual ? '' : ' is-none'), id: 'mp-usual' }, usual || 'No usual saved yet')));
+
+      box.appendChild(h('div', { class: 'mp-actions' },
+        h('button', { type: 'button', class: 'btn btn-toast add-btn', dataset: { k: 'add1' }, onclick: function () { addStamps(m.id, 1); } }, U.icon('plus'), 'Add 1 stamp'),
+        h('button', { type: 'button', class: 'btn add-btn', dataset: { k: 'add2' }, onclick: function () { addStamps(m.id, 2); } }, 'Add 2'),
+        h('div', { class: 'more', role: 'group', 'aria-label': 'Add another amount' },
+          h('button', { type: 'button', class: 'step', 'aria-label': 'One fewer', dataset: { k: 'step-down' }, disabled: S.stepN <= 1, onclick: function () { step(-1); } }, '\u2212'),
+          h('output', { class: 'more-n num', 'aria-live': 'polite' }, String(S.stepN)),
+          h('button', { type: 'button', class: 'step', 'aria-label': 'One more', dataset: { k: 'step-up' }, disabled: S.stepN >= 10, onclick: function () { step(1); } }, '+'),
+          h('button', { type: 'button', class: 'btn btn-ghost btn-sm', dataset: { k: 'addn' }, onclick: function () { addStamps(m.id, S.stepN); } }, 'Add ' + S.stepN))));
 
       if (S.flash && S.flash.memberId === m.id) {
         box.appendChild(h('p', { class: 'mp-flash is-' + S.flash.tone, id: 'mp-flash', role: 'status' }, S.flash.text));
@@ -372,15 +416,6 @@
         stampRow(m),
         h('p', { class: 'mp-life num' }, plural(m.lifetime, 'stamp', 'stamps') + ' in all. ' +
           (lv.next ? lv.toNext + ' more to ' + lv.next.name + '.' : 'Top status.'))));
-
-      box.appendChild(h('div', { class: 'mp-actions' },
-        h('button', { type: 'button', class: 'btn btn-toast add-btn', dataset: { k: 'add1' }, onclick: function () { addStamps(m.id, 1); } }, U.icon('plus'), 'Add 1 stamp'),
-        h('button', { type: 'button', class: 'btn add-btn', dataset: { k: 'add2' }, onclick: function () { addStamps(m.id, 2); } }, 'Add 2'),
-        h('div', { class: 'more', role: 'group', 'aria-label': 'Add another amount' },
-          h('button', { type: 'button', class: 'step', 'aria-label': 'One fewer', dataset: { k: 'step-down' }, disabled: S.stepN <= 1, onclick: function () { step(-1); } }, '\u2212'),
-          h('output', { class: 'more-n num', 'aria-live': 'polite' }, String(S.stepN)),
-          h('button', { type: 'button', class: 'step', 'aria-label': 'One more', dataset: { k: 'step-up' }, disabled: S.stepN >= 10, onclick: function () { step(1); } }, '+'),
-          h('button', { type: 'button', class: 'btn btn-ghost btn-sm', dataset: { k: 'addn' }, onclick: function () { addStamps(m.id, S.stepN); } }, 'Add ' + S.stepN))));
 
       box.appendChild(h('div', { class: 'mp-rewards' },
         h('p', { class: 'mp-label' }, 'Rewards'),
@@ -400,7 +435,7 @@
               h('div', { class: 'mini-state' }, noteState(x), h('span', { class: 'num' }, C.fmt.ago(x.at))));
           }))
           : h('p', { class: 'empty' }, 'No notes sent yet.')));
-    }, function () { return wide() ? find : box; });
+    }, function () { return phone() ? box : find; });
   }
 
   function step(d) {
@@ -412,7 +447,8 @@
     var r = C.addStamps(id, n, { by: BY });
     if (!r) return;
     var m = r.member, target = need(), text;
-    if (r.earned) text = 'That was stamp ' + target + '. A free drink is on the card.';
+    if (r.earned > 1) text = 'That filled the card ' + r.earned + ' times. ' + r.earned + ' free drinks are on the card.';
+    else if (r.earned) text = 'That was stamp ' + target + '. A free drink is on the card.';
     else text = (n === 1 ? 'Stamp added. ' : n + ' stamps added. ') + m.first + ' is on ' + m.stamps + ' of ' + target + '.';
     if (r.levelUp) text += ' ' + m.first + ' is ' + (r.levelUp.id === 'inner' ? 'in the Inner circle' : 'a Regular') + ' now.';
     S.flash = { memberId: id, tone: r.earned ? 'win' : 'ok', text: text };
@@ -439,7 +475,9 @@
     }).then(function (yes) {
       if (!yes) return;
       if (C.giveReward(m.id, r.key, BY)) {
-        S.flash = { memberId: m.id, tone: 'ok', text: isFree ? 'Free drink given. The card starts a fresh row.' : 'Birthday cheesecake given.' };
+        var now = C.member(m.id);
+        var fresh = now && now.stamps === 0 && now.free === 0;
+        S.flash = { memberId: m.id, tone: 'ok', text: isFree ? 'Free drink given.' + (fresh ? ' The card starts a fresh row.' : '') : 'Birthday cheesecake given.' };
         say(isFree ? 'Free drink given to ' + m.first : 'Birthday cheesecake given to ' + m.first);
       } else {
         say('That reward is no longer on the card');
@@ -452,6 +490,17 @@
     if (C.confirmRedeem(r.pending.id, BY)) {
       S.flash = { memberId: m.id, tone: 'ok', text: r.title + ' given. Code ' + r.pending.code + ' is used.' };
       say(r.title + ' given to ' + m.first);
+    } else {
+      say('That code has expired or was cancelled');
+    }
+    schedule();
+  }
+
+  // Confirm from the "Waiting at the bar" strip, without opening the card first.
+  function confirmWaiting(r, m) {
+    if (C.confirmRedeem(r.id, BY)) {
+      if (S.selectedId === r.memberId) S.flash = { memberId: r.memberId, tone: 'ok', text: r.title + ' given. Code ' + r.code + ' is used.' };
+      say(r.title + ' given' + (m ? ' to ' + m.first : ''));
     } else {
       say('That code has expired or was cancelled');
     }
@@ -482,7 +531,7 @@
   }
 
   function activityText(a) {
-    if (a.type === 'stamp') return plural(a.n, 'stamp', 'stamps') + (a.earned ? ', earned a free drink' : '');
+    if (a.type === 'stamp') return plural(a.n, 'stamp', 'stamps') + (a.earned > 1 ? ', earned ' + a.earned + ' free drinks' : a.earned ? ', earned a free drink' : '');
     if (a.type === 'redeem') return a.reward === 'birthday' ? 'birthday cheesecake given' : 'free drink given';
     if (a.type === 'join') return 'joined the Club';
     return a.type;
@@ -761,14 +810,16 @@
     var log = C.sentLog().slice(0, 30);
     U.fill($('#sent'), log.length ? log.map(function (g) {
       var one = g.count === 1, n0 = g.notes[0], m0 = one ? C.member(n0.to) : null;
+      var sample = one ? null : C.member(g.sample);
       return h('li', { class: 'sent-row', dataset: { batch: g.batch } },
         h('div', { class: 'sent-main' },
           h('p', { class: 'sent-meta' },
             h('span', { class: 'tag' }, KIND_LABEL[g.kind] || g.kind),
             h('span', { class: 'num' }, C.fmt.ago(g.at) + ', ' + C.fmt.time(g.at)),
             g.by ? h('span', null, 'by ' + g.by) : null),
-          h('p', { class: 'sent-title' }, one ? n0.title : g.title),
-          h('p', { class: 'sent-body' }, one ? n0.body : g.body)),
+          h('p', { class: 'sent-title' }, g.title),
+          h('p', { class: 'sent-body' }, g.body),
+          one ? null : h('p', { class: 'sent-sample' }, (sample ? 'Shown as sent to ' + sample.first + '.' : 'Shown as one person received it.') + ' Everyone got their own name.')),
         h('div', { class: 'sent-side' },
           h('p', { class: 'sent-to' }, one ? 'To ' + (m0 ? C.fmt.name(m0) : 'a former member') : 'Sent to ' + g.count + ' people'),
           h('p', { class: 'sent-read num' }, one ? (n0.read ? 'Read' : 'Not read yet') : 'Read by ' + g.read + ' of ' + g.count),
@@ -815,7 +866,7 @@
     return h('div', { class: 'ticket' },
       h('div', { class: 'ticket-img' },
         h('img', { alt: '', loading: 'lazy', src: '../assets/img/' + encodeURIComponent(o.img) }),
-        o.sticker ? U.sticker(o.sticker, { tone: o.tone, size: 80, tilt: 9 }) : null),
+        o.sticker && o.sticker.trim() ? U.sticker(o.sticker.trim(), { tone: o.tone, size: 80, tilt: 9 }) : null),
       h('div', { class: 'ticket-text' },
         h('p', { class: 'ticket-when' }, o.when),
         h('p', { class: 'ticket-title' }, o.title),
@@ -853,10 +904,17 @@
     });
   }
 
+  function weekReady() {
+    return !!S.week.draft && S.week.draft.every(function (o) { return !!String(o.title || '').trim(); });
+  }
+  // The header buttons and the bar under the third offer always say the same thing.
   function weekHead() {
-    $('#week-unsaved').hidden = !S.week.dirty;
-    $('#week-publish').disabled = !S.week.dirty;
-    $('#week-discard').disabled = !S.week.dirty;
+    var dirty = S.week.dirty, ready = weekReady();
+    $$('[data-week-unsaved]').forEach(function (el) { el.hidden = !dirty; });
+    $$('[data-week-hint]').forEach(function (el) { el.hidden = !dirty || ready; });
+    $$('[data-week-publish]').forEach(function (el) { el.disabled = !dirty || !ready; });
+    $$('[data-week-discard]').forEach(function (el) { el.disabled = !dirty; });
+    $('#week-bar').classList.toggle('is-dirty', dirty);
   }
 
   function renderWeek() {
@@ -872,22 +930,24 @@
     weekHead();
   }
 
-  $('#week-publish').addEventListener('click', function () {
-    if (!S.week.dirty) return;
+  function publishWeek() {
+    if (!S.week.dirty || !weekReady()) return;
     C.saveOffers(S.week.draft);
     S.week.draft = offersNow();
     S.week.dirty = false;
     buildWeek();
     weekHead();
-    say('Published to the site and the card');
-  });
-  $('#week-discard').addEventListener('click', function () {
+    say('Published to the site and the club card');
+  }
+  function discardWeek() {
     S.week.draft = offersNow();
     S.week.dirty = false;
     buildWeek();
     weekHead();
     say('Changes discarded');
-  });
+  }
+  $$('[data-week-publish]').forEach(function (b) { b.addEventListener('click', publishWeek); });
+  $$('[data-week-discard]').forEach(function (b) { b.addEventListener('click', discardWeek); });
 
   /* ---------- 5. settings ---------- */
 
@@ -938,7 +998,7 @@
   $('#reset-demo').addEventListener('click', function () {
     ask({
       title: 'Reset the demo data?',
-      body: 'Members, stamps, notes and offers go back to the samples. Anyone signed in on the member card is signed out.',
+      body: 'Members, stamps, notes and offers go back to the samples. Anyone signed in on the club card is signed out.',
       ok: 'Reset', danger: true
     }).then(function (yes) {
       if (!yes) return;
@@ -953,7 +1013,11 @@
 
   /* ---------- go ---------- */
 
-  C.on(schedule);
+  C.on(function (reason) {
+    if (reason === 'not-saving') { notSaving(); return; }
+    schedule();
+  });
+  window.addEventListener('resize', measureBar);
   // Keep "2 min ago", the open pill and the lock-screen clock honest while the tab sits open.
   setInterval(function () { if (!app.hidden && !document.hidden && !askDlg.open) schedule(); }, 60000);
 

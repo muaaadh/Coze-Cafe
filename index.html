@@ -6,7 +6,7 @@
 <title>Cozé Coffee Club, Malé. Your quiet corner when the city gets too loud.</title>
 <meta name="description" content="Cozé Coffee Club in Maafannu, Malé. Signature drinks, breakfast from home kitchens, and a club card that remembers your usual.">
 <meta property="og:title" content="Cozé Coffee Club, Malé">
-<meta property="og:description" content="Your quiet corner when the city gets too loud. Ten stamps, then one on us.">
+<meta property="og:description" content="Your quiet corner when the city gets too loud. Signature drinks and a club card that remembers your usual.">
 <meta property="og:image" content="https://muaaadh.github.io/Coze-Cafe/assets/img/og.jpg">
 <meta property="og:url" content="https://muaaadh.github.io/Coze-Cafe/">
 <meta property="og:type" content="website">
@@ -30,9 +30,9 @@
 
 <aside class="demo-switch" aria-label="Demo preview">
   <span class="demo-label">Demo preview</span>
-  <a href="./" aria-current="page">Site</a>
-  <a href="club/">Member card</a>
-  <a href="staff/">Staff counter</a>
+  <a href="index.html" aria-current="page">Site</a>
+  <a href="club/index.html">Club card</a>
+  <a href="staff/index.html">Staff counter</a>
 </aside>
 
 <nav class="capsule" aria-label="Main">
@@ -41,7 +41,7 @@
   <a href="#week">This week</a>
   <a href="#visit">Visit</a>
 </nav>
-<a class="btn top-cta" href="club/">My club card</a>
+<a class="btn top-cta" href="club/index.html">My club card</a>
 
 <header class="hero" id="top">
   <picture class="hero-photo">
@@ -58,9 +58,9 @@
       <svg class="wm" viewBox="0 0 3244 1046" aria-hidden="true"><use href="#coze"/></svg>
     </h1>
     <div class="hero-side">
-      <a class="sticker hero-sticker" href="#club" style="--size:128px;--tilt:11deg" aria-label="Ten stamps and the next drink is on us. See the club card.">
+      <a class="sticker hero-sticker" href="#club" style="--size:128px;--tilt:11deg" aria-label="Collect stamps and the next drink is on us. See the club card.">
         <svg aria-hidden="true"><use href="#scallop"/></svg>
-        <span><b>10</b>stamps, one on us</span>
+        <span><b data-need>10</b>stamps, one on us</span>
       </a>
       <span class="pill">Opposite STO, Maafannu</span>
       <span class="pill" data-open-pill><i class="dot"></i><span data-open-label>Every day, 7:30 am to 11:30 pm</span></span>
@@ -72,24 +72,8 @@
 
   <section class="intro wrap" aria-labelledby="intro-title">
     <h2 id="intro-title" class="display h-xl center" data-reveal>Your quiet corner when the city gets too loud.</h2>
-    <ul class="tiles">
-      <li class="tile" data-reveal style="--d:0ms">
-        <img src="assets/img/drink-matcha-monkey.webp" width="900" height="900" alt="Matcha Monkey, a layered banana matcha, held over a table of cake" loading="lazy">
-        <div class="sticker" style="--size:108px;--tilt:14deg"><svg aria-hidden="true"><use href="#scallop"/></svg><span>Banana matcha</span></div>
-        <p class="tile-name">Matcha Monkey</p>
-      </li>
-      <li class="tile" data-reveal style="--d:90ms">
-        <img src="assets/img/drink-dirty-frostbite.webp" width="900" height="900" alt="Dirty Frostbite, a pale blue drink with a white foam top, in a flask-shaped glass" loading="lazy">
-        <div class="sticker is-toast" style="--size:112px;--tilt:-12deg"><svg aria-hidden="true"><use href="#burst"/></svg><span>Served in a flask</span></div>
-        <p class="tile-name">Dirty Frostbite</p>
-      </li>
-      <li class="tile" data-reveal style="--d:180ms">
-        <img src="assets/img/drink-marshmallow-bloom.webp" width="900" height="900" alt="Marshmallow Bloom, a blueberry drink topped with a toasted marshmallow" loading="lazy">
-        <div class="sticker is-espresso" style="--size:108px;--tilt:10deg"><svg aria-hidden="true"><use href="#scallop"/></svg><span>Toasted on top</span></div>
-        <p class="tile-name">Marshmallow Bloom</p>
-      </li>
-    </ul>
   </section>
+
 
   <!-- The club card: the main feature, kept within one scroll of the top. -->
   <section id="club" class="club wrap" aria-labelledby="club-title">
@@ -97,24 +81,28 @@
       <div class="club-copy">
         <p class="eyebrow">Cozé Club</p>
         <h2 id="club-title" class="display h-lg">A card with your name on it.</h2>
-        <p class="lead">Ten stamps, then one on us. Your usual, remembered at the bar. And the odd note that is written to you, not to everyone.</p>
+        <p class="lead"><span data-need-word>Ten</span> stamps, then one on us. Your usual, remembered at the bar. And the odd note that is written to you, not to everyone.</p>
         <dl class="club-points">
           <div><dt>A loyalty card on your phone</dt><dd>No app to download, no plastic to lose. Add it to your home screen and show it at the bar.</dd></div>
-          <div><dt>Notes sent only to you</dt><dd>Your free drink is ready. It is your birthday month. A new drink wants tasting. Never ads.</dd></div>
+          <div><dt>Personal notifications, written to you</dt><dd>Your free drink is ready. It is your birthday month. A new drink wants tasting. Never ads.</dd></div>
           <div><dt>Private by default</dt><dd>No public profile and no leaderboard. Only the team at Cozé sees your card, and you can delete it any time.</dd></div>
         </dl>
-        <form class="join" id="joinForm" action="club/" method="get" novalidate>
+        <div class="join is-member" id="joinMember" hidden>
+          <p><b data-member-line>Your card</b><span data-member-sub></span></p>
+          <a class="btn" href="club/index.html">Open my card <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        </div>
+        <form class="join" id="joinForm" action="club/index.html" method="get" novalidate>
           <label class="field">
             <span>First name</span>
             <input type="text" name="first" autocomplete="given-name" maxlength="30" required placeholder="Leena">
           </label>
           <label class="field">
             <span>Mobile number</span>
-            <span class="tel"><i>+960</i><input type="tel" name="mobile" inputmode="numeric" autocomplete="tel-national" maxlength="8" required placeholder="777 0000"></span>
+            <span class="tel"><i>+960</i><input type="tel" name="mobile" inputmode="numeric" autocomplete="tel-national" maxlength="16" required placeholder="777 0000"></span>
           </label>
           <button class="btn btn-block" type="submit">Get my card <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></button>
           <p class="field-error" id="joinError" role="alert" hidden></p>
-          <p class="hint">Already have one? <a href="club/">Open my card</a></p>
+          <p class="hint">Already have one? <a href="club/index.html">Open my card</a></p>
         </form>
       </div>
 
@@ -152,11 +140,31 @@
         </div>
         <div class="club-try">
           <button class="btn btn-toast" type="button" id="phoneStampBtn"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg> Add a stamp</button>
-          <p>Try it. This is what happens on your phone when the barista stamps your card.</p>
+          <p>Try it. This is what happens on your phone when the barista stamps your card. <a href="club/index.html?demo=1">Open the full demo card</a></p>
         </div>
-        <div class="sticker is-espresso club-sticker" style="--size:118px;--tilt:-12deg"><svg aria-hidden="true"><use href="#burst"/></svg><span>First stamp is on us</span></div>
+        <div class="sticker is-espresso club-sticker" data-welcome style="--size:118px;--tilt:-12deg"><svg aria-hidden="true"><use href="#burst"/></svg><span>First stamp is on us</span></div>
       </div>
     </div>
+  </section>
+
+  <section class="tiles-wrap wrap" aria-label="Three signature drinks">
+    <ul class="tiles">
+      <li class="tile" data-reveal style="--d:0ms">
+        <img src="assets/img/drink-matcha-monkey.webp" width="900" height="900" alt="Matcha Monkey, a layered banana matcha, held over a table of cake" loading="lazy">
+        <div class="sticker" style="--size:108px;--tilt:14deg"><svg aria-hidden="true"><use href="#scallop"/></svg><span>Banana matcha</span></div>
+        <p class="tile-name">Matcha Monkey</p>
+      </li>
+      <li class="tile" data-reveal style="--d:90ms">
+        <img src="assets/img/drink-dirty-frostbite.webp" width="900" height="900" alt="Dirty Frostbite, a pale blue drink with a white foam top, in a flask-shaped glass" loading="lazy">
+        <div class="sticker is-toast" style="--size:112px;--tilt:-12deg"><svg aria-hidden="true"><use href="#burst"/></svg><span>Served in a flask</span></div>
+        <p class="tile-name">Dirty Frostbite</p>
+      </li>
+      <li class="tile" data-reveal style="--d:180ms">
+        <img src="assets/img/drink-marshmallow-bloom.webp" width="900" height="900" alt="Marshmallow Bloom, a blueberry drink topped with a toasted marshmallow" loading="lazy">
+        <div class="sticker is-espresso" style="--size:108px;--tilt:10deg"><svg aria-hidden="true"><use href="#scallop"/></svg><span>Toasted on top</span></div>
+        <p class="tile-name">Marshmallow Bloom</p>
+      </li>
+    </ul>
   </section>
 
   <!-- Three panels that stack over each other while scrolling. -->
@@ -269,12 +277,12 @@
 
   <section class="closing wrap" aria-labelledby="closing-title">
     <div class="closing-copy">
-      <div class="sticker closing-sticker" style="--size:120px;--tilt:-10deg"><svg aria-hidden="true"><use href="#scallop"/></svg><span>First stamp is on us</span></div>
+      <div class="sticker closing-sticker" data-welcome style="--size:120px;--tilt:-10deg"><svg aria-hidden="true"><use href="#scallop"/></svg><span>First stamp is on us</span></div>
       <h2 id="closing-title" class="display h-xl">Coffee tastes better when they know your order.</h2>
       <div class="closing-row">
         <p>Get the card. It takes a first name and a mobile number.</p>
         <div class="btn-row">
-          <a class="btn btn-toast" href="club/">Get my club card <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          <a class="btn btn-toast" href="club/index.html">Get my club card <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
           <a class="btn btn-ghost" href="#menu">See the menu</a>
         </div>
       </div>
@@ -307,8 +315,8 @@
         <ul>
           <li><a href="#menu">Menu</a></li>
           <li><a href="#week">This week</a></li>
-          <li><a href="club/">Club card</a></li>
-          <li><a href="staff/">Staff counter</a></li>
+          <li><a href="club/index.html">Club card</a></li>
+          <li><a href="staff/index.html">Staff counter</a></li>
         </ul>
       </div>
       <div>

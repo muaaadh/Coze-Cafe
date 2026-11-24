@@ -26,17 +26,27 @@
 
     <!-- Shown beside the phone on wide screens only -->
     <aside class="stage-note" aria-label="About this demo">
-      <p class="stage-tag">Demo</p>
-      <h2>The member app</h2>
+      <h2>The club card</h2>
       <p>This is what a Cozé Club member sees. On a phone it fills the screen and can be added to the Home Screen like an app.</p>
-      <p>Open the staff counter in another tab and add a stamp to Leena. This card reacts on its own, with no reload.</p>
-      <p class="stage-links">
-        <a class="btn btn-sm" href="../staff/" target="_blank" rel="noopener">Open the staff counter</a>
-        <a class="btn btn-sm btn-ghost" href="../">Back to the site</a>
-      </p>
+      <p>Keep this open, open the staff counter beside it and add a stamp to Leena. The club card reacts on its own, with no reload.</p>
+      <nav class="demo-switch" aria-label="Demo preview">
+        <span class="demo-label">Demo preview</span>
+        <a href="../index.html">Site</a>
+        <a href="index.html" aria-current="page">Club card</a>
+        <a href="../staff/index.html" target="_blank" rel="noopener">Staff counter</a>
+      </nav>
+      <p class="stage-fine">Staff counter opens in a new tab.</p>
     </aside>
 
     <div class="phone" id="phone">
+
+      <!-- Demo only: jump between the three parts. Hidden when the club card runs from the Home Screen. -->
+      <aside class="demo-switch is-strip" aria-label="Demo preview">
+        <span class="demo-label">Demo preview</span>
+        <a href="../index.html">Site</a>
+        <a href="index.html" aria-current="page">Club card</a>
+        <a href="../staff/index.html">Staff counter</a>
+      </aside>
 
       <!-- A note arriving while the app is open slides down here, like a phone notification -->
       <button class="banner" id="banner" type="button" hidden>
@@ -56,7 +66,7 @@
         </header>
 
         <h1>Get your club card</h1>
-        <p class="lede">Ten stamps, then one on us. It takes a first name and a mobile number.</p>
+        <p class="lede"><span id="gateStamps">Ten</span> stamps, then one on us. It takes a first name and a mobile number.</p>
 
         <form class="panel form" id="joinForm" novalidate>
           <label class="field">
@@ -68,7 +78,7 @@
             <label for="joinMobile">Mobile number</label>
             <div class="prefixed">
               <span aria-hidden="true">+960</span>
-              <input id="joinMobile" name="mobile" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="9" placeholder="7XX XXXX" required aria-describedby="joinMobileHint">
+              <input id="joinMobile" name="mobile" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="16" placeholder="7XX XXXX" required aria-describedby="joinMobileHint">
             </div>
             <small id="joinMobileHint">This is how the bar finds your card.</small>
           </div>
@@ -95,7 +105,7 @@
 
           <p class="field-error" id="joinError" role="alert" hidden></p>
           <button class="btn btn-toast btn-block" type="submit">Get my card</button>
-          <p class="fine">Your card is private. No public profile, and only the team at Cozé sees it.</p>
+          <p class="fine">Your club card is private. No public profile, and only the team at Cozé sees it.</p>
         </form>
 
         <form class="panel form" id="signInForm" novalidate>
@@ -104,7 +114,7 @@
             <label for="signInMobile">Mobile number</label>
             <div class="prefixed">
               <span aria-hidden="true">+960</span>
-              <input id="signInMobile" name="mobile" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="9" placeholder="7XX XXXX" required>
+              <input id="signInMobile" name="mobile" type="tel" inputmode="numeric" autocomplete="tel-national" maxlength="16" placeholder="7XX XXXX" required>
             </div>
           </div>
           <p class="field-error" id="signInError" role="alert" hidden></p>
@@ -113,17 +123,17 @@
         </form>
 
         <div class="panel demo-box">
-          <p><b>Just looking?</b> Open a card that already has nine stamps, a birthday treat and a few notes.</p>
+          <p><b>Just looking?</b> Open a club card that already has stamps, a birthday treat and a few notes.</p>
           <button class="btn btn-sun btn-block" type="button" id="demoCard">Try the demo card (Leena)</button>
         </div>
 
-        <p class="gate-links"><a href="../">Back to the Cozé site</a><a href="../staff/">Staff counter</a></p>
+        <p class="gate-links"><a href="../index.html">Back to the Cozé site</a><a href="../staff/index.html">Staff counter</a></p>
       </main>
 
       <!-- Signed in -->
       <div class="app" id="app" hidden>
         <header class="topbar">
-          <a class="topbar-brand" href="#card" aria-label="Cozé Club, your card">
+          <a class="topbar-brand" href="#card" aria-label="Cozé Club, your club card">
             <svg class="wm" viewBox="0 0 3244 1046" aria-hidden="true"><use href="#coze"></use></svg>
             <span>Club</span>
           </a>

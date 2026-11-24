@@ -17,6 +17,8 @@
 
 <noscript><p class="noscript">The staff counter needs JavaScript switched on.</p></noscript>
 
+<aside class="demo-switch is-strip" id="demo-strip" aria-label="Demo preview"><span class="demo-label">Demo preview</span><a href="../index.html">Site</a><a href="../club/index.html">Club card</a><a href="index.html" aria-current="page">Staff counter</a></aside>
+
 <!-- Passcode gate -->
 <main id="gate" class="gate gingham" hidden>
   <form id="gate-form" class="gate-card" novalidate>
@@ -30,7 +32,7 @@
     <p id="gate-error" class="field-error" role="alert"></p>
     <button class="btn btn-toast btn-block" type="submit">Open the counter</button>
     <p class="gate-demo">Demo passcode: 2026</p>
-    <p class="gate-links"><a href="../">Back to the site</a><a href="../club/">Member card</a></p>
+    <p class="gate-links"><a href="../index.html">Back to the site</a><a href="../club/index.html">Club card</a></p>
   </form>
 </main>
 
@@ -53,8 +55,8 @@
     </nav>
     <div class="side-foot">
       <span class="pill" id="open-pill"><span class="dot"></span><span id="open-text"></span></span>
-      <a href="../club/" target="_blank" rel="noopener">Open the member card</a>
-      <a href="../" target="_blank" rel="noopener">Open the site</a>
+      <a href="../club/index.html" target="_blank" rel="noopener">Open the club card</a>
+      <a href="../index.html" target="_blank" rel="noopener">Open the site</a>
       <button type="button" class="side-out" data-signout>Sign out</button>
     </div>
   </aside>
@@ -137,7 +139,7 @@
     <section class="sec" data-section="notes" aria-labelledby="h-notes" hidden>
       <header class="sec-head">
         <h1 id="h-notes">Notes</h1>
-        <p class="sec-sub">A note lands on the member's phone as a notification and stays in their card's inbox.</p>
+        <p class="sec-sub">A note lands on the member's phone as a notification and stays in the inbox on their club card.</p>
       </header>
 
       <div class="notes-grid">
@@ -228,6 +230,7 @@
             </div>
           </div>
           <p class="preview-cap" id="preview-cap"></p>
+          <p class="preview-note">In this preview it shows as a banner on the open club card, and as a phone notification once the member has turned notifications on.</p>
         </aside>
       </div>
 
@@ -242,15 +245,23 @@
       <header class="sec-head has-actions">
         <div>
           <h1 id="h-week">This week</h1>
-          <p class="sec-sub">The three offers shown on the site and on every member's card.</p>
+          <p class="sec-sub">The three offers shown on the site and on every club card.</p>
         </div>
         <div class="head-actions">
-          <span class="unsaved" id="week-unsaved" hidden>Unsaved changes</span>
-          <button type="button" class="btn btn-ghost btn-sm" id="week-discard" disabled>Discard</button>
-          <button type="button" class="btn btn-toast" id="week-publish" disabled>Publish</button>
+          <span class="week-hint" id="week-hint" data-week-hint hidden>Every offer needs a title</span>
+          <span class="unsaved" id="week-unsaved" data-week-unsaved hidden>Unsaved changes</span>
+          <button type="button" class="btn btn-ghost btn-sm" id="week-discard" data-week-discard disabled>Discard</button>
+          <button type="button" class="btn btn-toast" id="week-publish" data-week-publish disabled>Publish</button>
         </div>
       </header>
       <div class="offers" id="offers"></div>
+      <!-- The same buttons again. With unsaved changes this bar stays at the bottom of the screen. -->
+      <div class="save-bar" id="week-bar">
+        <span class="week-hint" id="week-hint-2" data-week-hint hidden>Every offer needs a title</span>
+        <span class="unsaved" data-week-unsaved hidden>Unsaved changes</span>
+        <button type="button" class="btn btn-ghost btn-sm" id="week-discard-2" data-week-discard disabled>Discard</button>
+        <button type="button" class="btn btn-toast" id="week-publish-2" data-week-publish disabled>Publish</button>
+      </div>
     </section>
 
     <!-- 5. Settings -->
@@ -282,7 +293,7 @@
           <label class="field" for="set-open"><span>Opens</span><input id="set-open" type="time" step="300"></label>
           <label class="field" for="set-close"><span>Closes</span><input id="set-close" type="time" step="300"></label>
         </div>
-        <p class="hint">Every day, on Malé time. The site and the card show "Open now" from these.</p>
+        <p class="hint">Every day, on Malé time. The site and the club card show "Open now" from these.</p>
 
         <div class="form-foot">
           <button class="btn btn-toast" type="submit" id="set-save">Save settings</button>
@@ -292,12 +303,12 @@
 
       <div class="card demo-tools">
         <h2 class="card-title">Demo tools</h2>
-        <p>Everything in this demo is stored in this browser only. Nothing is sent to a server, and the member card in another tab reads the same data.</p>
+        <p>Everything in this demo is stored in this browser only. Nothing is sent to a server, and the club card in another tab reads the same data.</p>
         <div class="demo-row">
           <button type="button" class="btn btn-ghost" id="reset-demo">Reset demo data</button>
           <span class="hint">Brings back the sample members, notes and offers.</span>
         </div>
-        <p class="demo-links"><a href="../club/" target="_blank" rel="noopener">Open the member card</a><a href="../" target="_blank" rel="noopener">Open the site</a></p>
+        <p class="demo-links"><a href="../club/index.html" target="_blank" rel="noopener">Open the club card</a><a href="../index.html" target="_blank" rel="noopener">Open the site</a></p>
       </div>
     </section>
 

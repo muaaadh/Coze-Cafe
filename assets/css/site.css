@@ -13,16 +13,7 @@ body { overflow-x: clip; }
 .btn-row { display: flex; flex-wrap: wrap; gap: 10px; }
 
 /* ---------- Demo switcher and navigation ---------- */
-.demo-switch {
-  position: fixed; right: 16px; bottom: 16px; z-index: 60;
-  display: flex; align-items: center; gap: 2px; padding: 5px;
-  border-radius: 999px; background: var(--card); box-shadow: var(--shadow-lift);
-  font-size: 13px; font-weight: 600;
-}
-.demo-label { padding: 0 8px 0 12px; color: var(--muted); }
-.demo-switch a { padding: 8px 12px; border-radius: 999px; text-decoration: none; color: var(--espresso); }
-.demo-switch a[aria-current] { background: var(--espresso); color: var(--paper); }
-.demo-switch a:not([aria-current]):hover { background: var(--butter); }
+.demo-switch { position: fixed; right: 16px; bottom: 16px; z-index: 60; box-shadow: var(--shadow-lift); }
 
 .capsule {
   position: fixed; top: 22px; left: 50%; transform: translateX(-50%); z-index: 50;
@@ -93,8 +84,9 @@ body { overflow-x: clip; }
 }
 
 /* ---------- Intro ---------- */
-.intro { padding: clamp(72px, 10.5vw, 150px) 0 clamp(36px, 5vw, 80px); }
-.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; max-width: min(1010px, calc(100% - 44px)); margin: clamp(36px, 5vw, 68px) auto 0; }
+.intro { padding: clamp(56px, 7.5vw, 104px) 0 clamp(28px, 3.6vw, 52px); }
+.tiles-wrap { padding: clamp(44px, 6vw, 88px) 0 0; }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; max-width: min(1010px, calc(100% - 44px)); margin: 0 auto; }
 .tile { position: relative; }
 .tile img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--r-card); box-shadow: var(--shadow); }
 .tile .sticker { position: absolute; top: -20px; right: -16px; }
@@ -124,7 +116,11 @@ body { overflow-x: clip; }
 }
 .join .btn { width: auto; min-height: 48px; }
 .join .field-error, .join .hint { grid-column: 1 / -1; }
-.join .hint a { color: var(--toast-deep); font-weight: 600; }
+.join .hint a { display: inline-block; padding: 10px 0; color: var(--toast-deep); font-weight: 600; }
+.join.is-member { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+.join.is-member p { display: grid; gap: 2px; }
+.join.is-member b { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+.join.is-member span { font-size: 15px; color: #5b4636; }
 .tel { display: flex; align-items: center; background: #fff; border: 1.5px solid var(--line-strong); border-radius: var(--r-field); transition: border-color 0.15s ease, box-shadow 0.15s ease; }
 .tel:focus-within { border-color: var(--toast); box-shadow: 0 0 0 3px rgba(188, 98, 50, 0.2); }
 .tel i { padding: 0 2px 0 14px; font-style: normal; font-weight: 600; font-size: 16px; color: var(--muted); }
@@ -190,6 +186,8 @@ body { overflow-x: clip; }
 
 .club-try { display: grid; justify-items: center; gap: 10px; max-width: 300px; text-align: center; }
 .club-try p { font-size: 14px; color: #5b4636; }
+.club-try a { display: inline-block; padding: 8px 0; color: var(--toast-deep); font-weight: 600; text-underline-offset: 3px; }
+.mini-btn, .mini-tabs { cursor: default; }
 .club-sticker { position: absolute; left: max(0px, calc(50% - 292px)); bottom: 210px; }
 
 /* ---------- Three stacking panels ---------- */
@@ -197,10 +195,10 @@ body { overflow-x: clip; }
 .panel {
   position: sticky; top: calc(84px + var(--i) * 12px);
   display: grid; grid-template-columns: minmax(0, 2.4fr) minmax(0, 1fr); gap: 8px;
-  height: min(calc(100svh - 132px), 660px); min-height: 470px;
+  height: min(calc(100svh - 132px), 560px); min-height: 440px;
 }
-.panel-copy { display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; gap: 16px; padding: clamp(24px, 3.4vw, 48px); border-radius: var(--r-panel); }
-.panel-copy h3 { max-width: 15em; }
+.panel-copy { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; padding: clamp(24px, 3.4vw, 48px); border-radius: var(--r-panel); }
+.panel-copy h3 { max-width: 15em; margin-bottom: auto; }
 .panel-copy p:not(.eyebrow) { max-width: 31em; font-size: 16px; line-height: 1.5; }
 .panel-copy .btn { margin-top: 6px; }
 .panel-photo { position: relative; overflow: hidden; border-radius: var(--r-panel); background: var(--tan); }
@@ -225,13 +223,14 @@ body { overflow-x: clip; }
 .ticket-photo img { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; border-radius: var(--r-card); }
 .ticket .sticker { --size: 96px; position: absolute; top: 14px; right: 14px; }
 .ticket-body { flex: 1; display: grid; align-content: start; gap: 8px; padding: 18px 14px 18px; }
-.ticket-when { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--toast-deep); }
+.ticket-when { font-size: 14px; font-weight: 600; color: var(--toast-deep); }
 .ticket-title { font-size: 21px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; }
+.ticket-body > *, .ticket-foot span { min-width: 0; overflow-wrap: anywhere; }   /* a pasted link must wrap, not widen the page */
 .ticket-text { font-size: 15px; color: #5b4636; }
 .ticket-foot {
   display: flex; justify-content: space-between; gap: 12px; margin: 0 14px; padding: 14px 0 12px;
   border-top: 2px dashed var(--line-strong);
-  font-size: 11.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+  font-size: 13px; font-weight: 600; color: var(--muted);
 }
 
 /* ---------- Club favourites: tilted cards over one huge word ---------- */
@@ -279,7 +278,7 @@ body { overflow-x: clip; }
 .menu-col.is-butter { --rule: rgba(58, 36, 23, 0.16); --price: var(--toast-deep); background: var(--butter); color: var(--espresso); }
 .menu-col.is-toast { --rule: rgba(255, 255, 255, 0.26); --price: #fff; background: var(--toast); color: #fff; }
 .menu-col.is-toast .menu-desc { opacity: 0.94; }
-.menu-foot { margin-top: 20px; padding: 0 clamp(4px, 1.6vw, 24px); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--toast-deep); }
+.menu-foot { margin-top: 20px; padding: 0 clamp(4px, 1.6vw, 24px); font-size: 14px; font-weight: 500; color: var(--toast-deep); }
 
 /* ---------- Visit ---------- */
 .visit { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); align-items: start; padding: clamp(40px, 6vw, 96px) 0; scroll-margin-top: 60px; }
@@ -332,8 +331,10 @@ body { overflow-x: clip; }
 .foot-cols { display: grid; grid-template-columns: minmax(0, 2.6fr) repeat(3, minmax(0, 1fr)); gap: 32px; padding: clamp(28px, 4vw, 54px) clamp(20px, 2.6vw, 38px); font-size: 15px; }
 .foot-cols .eyebrow { margin-bottom: 14px; color: #b89878; }
 .foot-cols a { text-decoration: none; }
+.foot-cols li a { display: inline-block; padding: 9px 0; }
 .foot-cols a:hover { color: var(--butter); text-decoration: underline; text-underline-offset: 3px; }
-.foot-cols li + li, .foot-cols p + p:not(.eyebrow) { margin-top: 8px; }
+.foot-cols p + p:not(.eyebrow) { margin-top: 8px; }
+.foot-cols .eyebrow + ul { margin-top: -9px; }
 .foot-big { font-size: clamp(24px, 2.7vw, 36px); font-weight: 700; letter-spacing: -0.04em; color: var(--sun); }
 .foot-word { display: block; width: calc(100% - clamp(40px, 5.2vw, 76px)); height: auto; margin: 6px auto 0; color: var(--toast); }
 .foot-small { padding: 24px clamp(20px, 2.6vw, 38px) 6px; font-size: 13px; color: #b89878; }
@@ -356,8 +357,13 @@ body { overflow-x: clip; }
   .foot-hello { grid-column: 1 / -1; }
 }
 @media (max-width: 899px) {
+  body { padding-bottom: 82px; }
   .demo-switch { position: static; justify-content: center; margin: 10px 10px 0; border-radius: 18px; background: var(--butter); box-shadow: none; }
-  .top-cta { position: absolute; top: 74px; right: 24px; min-height: 40px; padding: 0 16px; font-size: 14px; }
+  .demo-switch a { min-height: 44px; }
+  .capsule { top: auto; bottom: max(12px, env(safe-area-inset-bottom)); max-width: calc(100vw - 16px); }
+  .capsule a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; }
+  .toast-wrap { bottom: calc(max(12px, env(safe-area-inset-bottom)) + 66px); }
+  .top-cta { position: absolute; top: 84px; right: 24px; min-height: 44px; padding: 0 18px; font-size: 14px; }
   .hero-brand { top: 24px; left: 22px; }
   .hero-foot { left: 22px; right: 20px; bottom: 22px; }
   .tickets, .word-cards { grid-template-columns: minmax(0, 1fr); max-width: 560px; margin-inline: auto; }
@@ -373,14 +379,11 @@ body { overflow-x: clip; }
 
 /* ---------- Phone ---------- */
 @media (max-width: 700px) {
-  body { padding-bottom: 78px; }
-  /* The link capsule moves to the thumb: fixed at the bottom of the screen. */
-  .capsule { top: auto; bottom: max(12px, env(safe-area-inset-bottom)); max-width: calc(100vw - 16px); }
-  .capsule a { padding: 11px 13px; font-size: 14px; }
+  .capsule a { padding: 0 13px; font-size: 14px; }
   .demo-switch { font-size: 12.5px; padding: 4px; }
   .demo-label { padding: 0 4px 0 8px; }
-  .demo-switch a { padding: 8px 10px; }
-  .top-cta { top: 70px; right: 22px; }
+  .demo-switch a { padding: 0 10px; }
+  .top-cta { top: 80px; right: 22px; }
 
   .hero { height: calc(100svh - 150px); min-height: 500px; max-height: 720px; }
   .hero-photo img { object-position: 42% 50%; }
@@ -393,7 +396,8 @@ body { overflow-x: clip; }
   .hero-side .pill { min-height: 30px; padding: 0 11px; font-size: 13px; }
   .hero-sticker { --size: 98px !important; position: absolute; right: -4px; bottom: -4px; margin: 0; }
 
-  .intro { padding-top: 64px; }
+  .intro { padding-top: 56px; }
+  .tiles-wrap { padding-top: 20px; }
   .tiles { display: flex; gap: 14px; max-width: none; margin-inline: -10px; padding: 28px 22px 14px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
   .tiles::-webkit-scrollbar { display: none; }
   .tile { flex: 0 0 72%; scroll-snap-align: center; }
@@ -401,7 +405,7 @@ body { overflow-x: clip; }
 
   .club-panel { padding: 30px 16px 18px; }
   .club-points > div { grid-template-columns: minmax(0, 1fr); }
-  .join { grid-template-columns: minmax(0, 1fr); padding: 14px; }
+  .join, .join.is-member { grid-template-columns: minmax(0, 1fr); padding: 14px; }
   .club-sticker { display: none; }
   .club-show { margin-top: 30px; }
 

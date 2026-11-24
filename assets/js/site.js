@@ -76,7 +76,7 @@
     UI.fill(list, FAVS.map(function (id) {
       var d = COZE.drink(id);
       var mine = !!(me && me.usual && me.usual.drink === id);
-      var btn = h('a', { class: 'btn', href: 'club/?usual=' + encodeURIComponent(id) }, mine ? 'Your usual' : 'Make it my usual');
+      var btn = h('a', { class: 'btn', href: 'club/index.html?usual=' + encodeURIComponent(id) }, mine ? 'Your usual' : 'Make it my usual');
       btn.addEventListener('click', function (e) {
         var m = COZE.currentMember();
         if (!m) return;                       // not a member yet: the link takes them to the card with this drink chosen
@@ -114,7 +114,7 @@
   function phoneDemo() {
     var stamps = $('#phoneStamps'), note = $('#phoneNote'), line = $('#phoneLine'), btn = $('#phoneStampBtn');
     if (!stamps || !note || !btn) return;
-    var NEED = 10, n = 8, hideTimer = null;
+    var NEED = COZE.state().settings.stampsForFree, n = NEED - 2, hideTimer = null;
 
     function draw(fresh) {
       UI.fill(stamps, Array.apply(null, { length: NEED }).map(function (_, i) {
@@ -144,7 +144,7 @@
       }
       n += 1; draw(n - 1);
       if (n === NEED) {
-        say('Your next drink is on us', 'That is 10 stamps, Leena. Show your card and pick anything on the menu.', 7000);
+        say('Your next drink is on us', 'That is ' + NEED + ' stamps, Leena. Show your card and pick anything on the menu.', 7000);
         label('Use the free drink');
       } else {
         var left = NEED - n;
@@ -153,6 +153,12 @@
     });
 
     draw();
+    // If staff change how many stamps make a free drink, the sample card follows.
+    COZE.on(function () {
+      var need = COZE.state().settings.stampsForFree;
+      if (need === NEED) return;
+      NEED = need; n = NEED - 2; draw(); label('Add a stamp');
+    });
     // Greet with a personal note the first time the phone scrolls into view.
     var phone = $('#phoneDemo');
     if (io && phone) {
@@ -218,7 +224,28 @@
     frame();
   }
 
+  /* ---------- copy that follows the staff settings, and the member who is signed in ---------- */
+  function drawRules() {
+    var s = COZE.state().settings;
+    $$('[data-need]').forEach(function (el) { el.textContent = s.stampsForFree; });
+    $$('[data-need-word]').forEach(function (el) { el.textContent = COZE.fmt.word(s.stampsForFree); });
+    $$('[data-welcome]').forEach(function (el) { el.hidden = !s.welcomeStamp; });
+
+    // Someone who already holds a card is not asked for their name and number again.
+    var me = COZE.currentMember(), box = $('#joinMember'), form = $('#joinForm');
+    if (!box || !form) return;
+    box.hidden = !me;
+    form.hidden = !!me;
+    if (me) {
+      $('[data-member-line]', box).textContent = me.first + ', your card is ready.';
+      $('[data-member-sub]', box).textContent = me.free > 0
+        ? (me.free === 1 ? 'A free drink is waiting on it.' : me.free + ' free drinks are waiting on it.')
+        : me.stamps + ' of ' + s.stampsForFree + ' stamps so far.';
+    }
+  }
+
   /* ---------- go ---------- */
+  drawRules();
   drawHours();
   drawOffers();
   drawFavs();
@@ -228,5 +255,5 @@
   scrollEffects();
   setInterval(drawHours, 60000);
   // Staff edits and card changes made in another tab show up here straight away.
-  COZE.on(function () { drawHours(); drawOffers(); drawFavs(); });
+  COZE.on(function () { drawRules(); drawHours(); drawOffers(); drawFavs(); });
 })();
